@@ -4,16 +4,18 @@ import type { ExpoConfig, ConfigContext } from 'expo/config';
 // MovieVault - Pure Local Android Configuration
 // ─────────────────────────────────────────────────────────────────────
 
+const env = process.env as any;
+
 const CLERK_KEY =
-  process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+  env['EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY'] ||
   'pk_test_c2hhcnAtY293LTk2LmNsZXJrLmFjY291bnRzLmRldiQ';
 
 const API_URL =
-  process.env.EXPO_PUBLIC_API_URL ||
+  env['EXPO_PUBLIC_API_URL'] ||
   'https://movies-vault-production.up.railway.app';
 
 const TMDB_KEY =
-  process.env.EXPO_PUBLIC_TMDB_API_KEY ||
+  env['EXPO_PUBLIC_TMDB_API_KEY'] ||
   '2e9b43087d0f9736eab380d2151b3b8c';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({

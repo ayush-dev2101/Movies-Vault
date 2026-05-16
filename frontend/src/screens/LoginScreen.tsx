@@ -45,11 +45,46 @@ const LoginScreen = () => {
         identifier: email.trim(),
         password,
       });
-      await setActive({ session: completeSignIn.createdSessionId });
+
+      if (completeSignIn.status === 'complete') {
+        await setActive({ session: completeSignIn.createdSessionId });
+      } else {
+        console.warn('[MovieVault] Login incomplete status:', completeSignIn.status);
+        if (completeSignIn.status === 'needs_first_factor' || completeSignIn.status === 'needs_second_factor') {
+          Alert.alert(
+            'Verification Required',
+            'You need to verify your account before logging in.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Verify Now', onPress: () => navigation.navigate('OTP', { email: email.trim() }) }
+            ]
+          );
+        } else {
+          Alert.alert('Login Incomplete', `Further action required: ${completeSignIn.status}`);
+        }
+      }
     } catch (err: any) {
       console.error('[MovieVault] Login Error:', err);
+      
+      const errorCode = err?.errors?.[0]?.code;
       const message = err?.errors?.[0]?.message || 'Invalid credentials. Please try again.';
-      Alert.alert('Login Failed', message);
+      
+      if (errorCode === 'form_identifier_not_found') {
+        Alert.alert(
+          'User Not Found',
+          'No account found with this email. Please sign up first.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Sign Up', onPress: () => navigation.navigate('Signup') }
+          ]
+        );
+      } else if (errorCode === 'form_password_incorrect') {
+        Alert.alert('Incorrect Password', 'The password you entered is incorrect. Please try again.');
+      } else if (err.message && err.message.includes('Network')) {
+        Alert.alert('Network Error', 'Please check your internet connection and try again.');
+      } else {
+        Alert.alert('Login Failed', message);
+      }
     } finally {
       clearTimeout(timeoutId);
       setLoading(false);
