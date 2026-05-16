@@ -12,6 +12,9 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const AppNavigator = () => {
   const { isLoaded, isSignedIn } = useAuth();
 
+  // Debug logs for production tracing
+  console.log('[MovieVault] Nav Mount - Auth Loaded:', isLoaded, 'Signed In:', isSignedIn);
+
   // Show splash screen while Clerk is initializing session
   if (!isLoaded) {
     return <SplashScreen />;
