@@ -8,10 +8,12 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import Colors from '../constants/Colors';
 import { useNavigation } from '@react-navigation/native';
+import API_URL from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import GoogleAuthButton from '../components/GoogleAuthButton';
@@ -25,45 +27,37 @@ const SignupScreen = () => {
   const { login } = useAuth(); // Assume signup also logs them in or redirects
 
   const handleSignup = async () => {
-    if (!name || !email || !password) {
-      alert('Please fill out all fields.');
-      return;
-    }
-
-    setLoading(true);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-
     try {
-      // In production, this should point to your live backend URL
-      // Use EXPO_PUBLIC_API_URL for physical device testing
-      const API_URL = process.env.EXPO_PUBLIC_API_URL ? `${process.env.EXPO_PUBLIC_API_URL}/api/auth/register` : 'http://10.0.2.2:5001/api/auth/register';
+      setLoading(true);
 
-      const res = await fetch(API_URL, {
+      if (!name || !email || !password) {
+        Alert.alert('Error', 'All fields are required');
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
-        signal: controller.signal
       });
 
-      clearTimeout(timeoutId);
-      const data = await res.json();
+      const data = await response.json();
 
-      if (res.ok) {
-        alert('Success! Check your email for the verification code.');
-        // Navigate to OTP screen and pass the email
-        navigation.navigate('OTP', { email });
-      } else {
-        alert(data.message || 'Signup failed. Please try again.');
+      if (!response.ok) {
+        Alert.alert('Error', data.message || 'Signup failed');
+        return;
       }
+
+      // Navigate to OTP screen on success
+      Alert.alert('Success', 'Check your email for the verification code.');
+      navigation.navigate('OTP', { email });
+
     } catch (error: any) {
-      clearTimeout(timeoutId);
-      console.error('Signup Error:', error);
-      if (error.name === 'AbortError') {
-        alert('Connection timed out. Please check your network connection and ensure the backend is running and accessible on the same Wi-Fi.');
-      } else {
-        alert('Network error. Please make sure the backend is running and your phone is on the same network.');
-      }
+      console.error('Signup error:', error.message);
+      Alert.alert(
+        'Connection Error',
+        'Could not reach server. Please check your internet connection.'
+      );
     } finally {
       setLoading(false);
     }

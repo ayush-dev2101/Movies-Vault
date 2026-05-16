@@ -17,6 +17,7 @@ jspm_packages/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
 .env*.local
 
 # Expo / React Native
@@ -38,6 +39,11 @@ ios/
 android/
 frontend/ios/
 frontend/android/
+android/build/
+android/app/build/
+android/.gradle/
+android/gradle/wrapper/gradle-wrapper.jar
+android/app/debug.keystore
 
 # TypeScript
 *.tsbuildinfo
@@ -49,3 +55,4 @@ frontend/android/
 .idea/
 *.swp
 *.swo
+Thumbs.db

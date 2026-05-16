@@ -105,7 +105,24 @@ exports.login = async (req, res) => {
 
     if (user && (await user.comparePassword(password))) {
       if (!user.isVerified) {
-        return res.status(401).json({ success: false, message: 'Please verify your email first' });
+        // Delete any existing unverified OTPs for this email to prevent duplicates
+        await OTP.deleteMany({ email, type: 'verification' });
+
+        const otp = generateOTP();
+        await OTP.create({
+          email,
+          otp,
+          type: 'verification'
+        });
+
+        await sendOTP(email, otp, 'verification');
+
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Email not verified. A new OTP has been sent to your email.',
+          requiresVerification: true,
+          email 
+        });
       }
 
       console.log(`[${new Date().toISOString()}] Login successful for user ID: ${user._id}`);

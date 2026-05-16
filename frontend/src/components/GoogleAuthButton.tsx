@@ -7,6 +7,7 @@ import {
   GoogleSignin,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
+import API_URL from '../config/api';
 
 interface GoogleAuthButtonProps {
   title?: string;
@@ -37,16 +38,15 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
         return;
       }
 
-      const API_URL = process.env.EXPO_PUBLIC_API_URL ? `${process.env.EXPO_PUBLIC_API_URL}/api/auth/google` : 'http://10.0.2.2:5001/api/auth/google';
-      const res = await fetch(API_URL, {
+      const response = await fetch(`${API_URL}/api/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      if (!res.ok) {
+      if (!response.ok) {
         Alert.alert('Error', data.message || 'Google login failed');
         setLoading(false);
         return;

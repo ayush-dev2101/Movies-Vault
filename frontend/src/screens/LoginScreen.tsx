@@ -8,10 +8,12 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import Colors from '../constants/Colors';
 import { useNavigation } from '@react-navigation/native';
+import API_URL from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import GoogleAuthButton from '../components/GoogleAuthButton';
@@ -25,40 +27,38 @@ const LoginScreen = () => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      alert('Please fill out all fields.');
+      Alert.alert('Error', 'Please fill out all fields.');
       return;
     }
 
     setLoading(true);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
     try {
-      const API_URL = process.env.EXPO_PUBLIC_API_URL ? `${process.env.EXPO_PUBLIC_API_URL}/api/auth/login` : 'http://10.0.2.2:5001/api/auth/login';
-
-      const res = await fetch(API_URL, {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
-        signal: controller.signal
       });
 
-      clearTimeout(timeoutId);
-      const data = await res.json();
+      const data = await response.json();
 
-      if (res.ok) {
+      if (response.status === 403 && data.requiresVerification) {
+        Alert.alert(
+          'Verify Your Email',
+          'A new OTP has been sent to your email. Please verify to continue.',
+          [{ text: 'Verify Now', onPress: () => navigation.navigate('OTP', { email }) }]
+        );
+        return;
+      }
+
+      if (response.ok) {
         await login({ name: data.name, email: data.email, avatar: data.avatar, id: data._id }, data.token);
       } else {
-        alert(data.message || 'Login failed. Please check your credentials.');
+        Alert.alert('Login Failed', data.message || 'Invalid credentials');
       }
     } catch (error: any) {
-      clearTimeout(timeoutId);
       console.error('Login Error:', error);
-      if (error.name === 'AbortError') {
-        alert('Connection timed out. Please check your network connection and ensure the backend is running and accessible on the same Wi-Fi.');
-      } else {
-        alert('Network error. Please make sure the backend is running and your phone is on the same network.');
-      }
+      Alert.alert('Error', 'Could not reach server. Please check your internet connection.');
     } finally {
       setLoading(false);
     }

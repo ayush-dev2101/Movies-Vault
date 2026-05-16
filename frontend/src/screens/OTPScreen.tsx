@@ -8,10 +8,12 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import Colors from '../constants/Colors';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import API_URL from '../config/api';
 import { Ionicons } from '@expo/vector-icons';
 
 const OTPScreen = () => {
@@ -23,43 +25,46 @@ const OTPScreen = () => {
 
   const handleVerifyOTP = async () => {
     if (!otp) {
-      alert('Please enter the OTP.');
+      Alert.alert('Error', 'Please enter the OTP.');
       return;
     }
 
     setLoading(true);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
-      const API_URL = process.env.EXPO_PUBLIC_API_URL ? `${process.env.EXPO_PUBLIC_API_URL}/api/auth/verify-otp` : 'http://10.0.2.2:5001/api/auth/verify-otp';
-
-      const res = await fetch(API_URL, {
+      const response = await fetch(`${API_URL}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp, type: 'verification' }),
-        signal: controller.signal
       });
 
-      clearTimeout(timeoutId);
-      const data = await res.json();
+      const data = await response.json();
 
-      if (res.ok) {
-        alert('Email verified successfully! You can now log in.');
+      if (response.ok) {
+        Alert.alert('Success', 'Email verified successfully! You can now log in.');
         navigation.navigate('Login');
       } else {
-        alert(data.message || 'OTP verification failed.');
+        Alert.alert('Error', data.message || 'OTP verification failed.');
       }
     } catch (error: any) {
-      clearTimeout(timeoutId);
       console.error('OTP Verification Error:', error);
-      if (error.name === 'AbortError') {
-        alert('Connection timed out. Please check your network connection.');
-      } else {
-        alert('Network error. Please make sure the backend is running.');
-      }
+      Alert.alert('Error', 'Could not reach server. Please check your internet connection.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/auth/resend-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      Alert.alert('Sent', data.message || 'New OTP sent to your email');
+    } catch (error) {
+      Alert.alert('Error', 'Could not resend OTP');
     }
   };
 
@@ -103,6 +108,13 @@ const OTPScreen = () => {
             )}
           </TouchableOpacity>
           
+          <TouchableOpacity 
+            style={{ marginTop: 20, alignItems: 'center' }}
+            onPress={handleResendOTP}
+          >
+            <Text style={{ color: Colors.textSecondary, fontWeight: '600' }}>Didn't receive a code? <Text style={{ color: Colors.primary }}>Resend OTP</Text></Text>
+          </TouchableOpacity>
+
           <TouchableOpacity 
             style={{ marginTop: 20, alignItems: 'center' }}
             onPress={() => navigation.navigate('Login')}

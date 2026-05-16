@@ -1,1 +1,21 @@
-node_modules
+# Expo cache
+.expo/
+
+# Android build files
+android/build/
+android/app/build/
+android/.gradle/
+android/gradle/wrapper/gradle-wrapper.jar
+android/app/debug.keystore
+
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# OS files
+.DS_Store
+Thumbs.db
