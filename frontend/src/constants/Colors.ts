@@ -1,10 +1,12 @@
 const Colors = {
   primary: '#FF3B30', // Cinematic Red
   secondary: '#1C1C1E', // Dark Grey/Black
-  background: '#0F0F0F', // Pure Cinematic Dark
-  surface: '#1C1C1E', // Dark Surface
+  background: '#080808', // Even deeper black
+  surface: '#121212',    // Primary surface
+  surfaceLight: '#1A1A1A', // Secondary surface
+  border: 'rgba(255, 255, 255, 0.08)', 
   text: '#FFFFFF',
-  textSecondary: '#8E8E93',
+  textSecondary: '#A0A0A0',
   white: '#FFFFFF',
   error: '#FF3B30',
   success: '#34C759',
@@ -13,9 +15,9 @@ const Colors = {
     100: '#F2F2F7',
     200: '#E5E5EA',
     300: '#D1D1D6',
-    400: '#C7C7CC',
-    500: '#AEAEB2',
-    600: '#8E8E93',
+    400: '#717171',
+    500: '#555555',
+    600: '#333333',
   }
 };
 
