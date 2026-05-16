@@ -26,13 +26,15 @@ const FavoritesScreen = ({ navigation }: any) => {
       console.error('[MovieVault] Failed to load favorites:', error.message);
       
       const status = error.response?.status;
+      const backendMessage = error.response?.data?.message || error.message;
+
       if (status === 401) {
         // Safe to ignore: User's backend sync is likely still in progress
         setMovies([]);
       } else if (error.message === 'Server timeout. Please try again.') {
         Alert.alert('Server Waking Up', 'The backend is waking up from sleep. Please try refreshing in a few seconds.');
       } else {
-        Alert.alert('Sync Error', 'Could not sync favorites with the server.');
+        Alert.alert('Sync Error', `Exact Reason: ${backendMessage}`);
       }
     } finally {
       setLoading(false);

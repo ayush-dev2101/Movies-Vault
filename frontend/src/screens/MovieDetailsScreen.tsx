@@ -139,13 +139,22 @@ const MovieDetailsScreen = () => {
     );
   }
 
-  if (error || !movie) {
+  if (!movie) {
     return (
       <View style={styles.loaderContainer}>
-        <Ionicons name="alert-circle-outline" size={60} color={Colors.primary} />
-        <Text style={{ color: Colors.text, fontSize: 18, marginTop: 16, fontWeight: '600' }}>Failed to load movie</Text>
+        {error ? (
+          <>
+            <Ionicons name="alert-circle-outline" size={60} color={Colors.primary} />
+            <Text style={{ color: Colors.text, fontSize: 18, marginTop: 16, fontWeight: '600' }}>Failed to load movie details</Text>
+            <TouchableOpacity onPress={fetchDetails} style={{ marginTop: 20 }}>
+              <Text style={{ color: Colors.primary, fontSize: 16 }}>Tap to Retry</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <ActivityIndicator size="large" color={Colors.primary} />
+        )}
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
-          <Text style={{ color: Colors.primary, fontSize: 16 }}>← Go Back</Text>
+          <Text style={{ color: Colors.textSecondary, fontSize: 16 }}>← Go Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -153,6 +162,7 @@ const MovieDetailsScreen = () => {
 
   const renderCast = () => {
     const cast = movie.credits?.cast?.slice(0, 10) || [];
+    if (cast.length === 0) return null;
     return (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Top Cast</Text>
@@ -184,7 +194,7 @@ const MovieDetailsScreen = () => {
     <ScrollView style={styles.container} bounces={false}>
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: `https://image.tmdb.org/t/p/original${movie.backdrop_path || movie.posterPath}` }}
+          source={{ uri: `https://image.tmdb.org/t/p/original${movie.backdrop_path || movie.backdropPath || movie.poster_path || movie.posterPath}` }}
           style={styles.backdrop}
         />
         <TouchableOpacity 
@@ -221,21 +231,30 @@ const MovieDetailsScreen = () => {
             <Text style={styles.ratingText}>{(movie.vote_average || movie.rating || 0).toFixed(1)}</Text>
           </View>
           <Text style={styles.metaText}>{movie.release_date?.split('-')[0] || movie.releaseDate?.split('-')[0]}</Text>
-          <Text style={styles.metaText}>{movie.runtime} min</Text>
+          {movie.runtime && <Text style={styles.metaText}>{movie.runtime} min</Text>}
         </View>
 
-        <View style={styles.genreContainer}>
-          {movie.genres?.map((genre: any) => (
-            <View key={genre.id} style={styles.genreBadge}>
-              <Text style={styles.genreText}>{genre.name}</Text>
-            </View>
-          ))}
-        </View>
+        {movie.genres?.length > 0 && (
+          <View style={styles.genreContainer}>
+            {movie.genres.map((genre: any) => (
+              <View key={genre.id} style={styles.genreBadge}>
+                <Text style={styles.genreText}>{genre.name}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Overview</Text>
-          <Text style={styles.overview}>{movie.overview}</Text>
-        </View>
+        {movie.overview ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Overview</Text>
+            <Text style={styles.overview}>{movie.overview}</Text>
+          </View>
+        ) : (
+          <View style={styles.section}>
+             {/* If we have a shallow movie and TMDB is still loading */}
+             {loading && <ActivityIndicator size="small" color={Colors.primary} style={{ alignSelf: 'flex-start' }} />}
+          </View>
+        )}
 
         {renderCast()}
       </View>
