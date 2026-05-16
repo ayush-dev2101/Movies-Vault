@@ -4,9 +4,16 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
+    "start:dev": "expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "env:check": "node -e \"const e=require('./src/config/env'); e.validateEnv(); console.log('ENV OK');\"",
+    "doctor": "npx expo-doctor",
+    "prebuild:clean": "npx expo prebuild --clean --platform android",
+    "build:prod": "npx eas-cli build --platform android --profile production --non-interactive",
+    "build:dev": "npx eas-cli build --platform android --profile development --non-interactive"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.31",

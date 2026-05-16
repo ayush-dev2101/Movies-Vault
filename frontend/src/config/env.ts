@@ -1,35 +1,73 @@
-// Production-safe environment configuration
-// NEVER throws — uses fallbacks and warnings instead
+/**
+ * Production-Safe Environment Configuration
+ *
+ * Reading order for each variable:
+ * 1. process.env.EXPO_PUBLIC_* (works in dev + EAS if .env is present)
+ * 2. Constants.expoConfig?.extra (always works in production APK via app.config.ts)
+ * 3. Hardcoded fallback (final safety net)
+ *
+ * This triple-fallback ensures the app NEVER crashes due to missing env vars.
+ */
 
+import Constants from 'expo-constants';
+
+const extra = Constants.expoConfig?.extra ?? {};
+
+// ── CLERK ────────────────────────────────────────────
+const CLERK_PUBLISHABLE_KEY: string =
+  (process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY as string) ||
+  (extra.clerkPublishableKey as string) ||
+  'pk_test_c2hhcnAtY293LTk2LmNsZXJrLmFjY291bnRzLmRldiQ';
+
+// ── API ──────────────────────────────────────────────
+const API_URL: string =
+  (process.env.EXPO_PUBLIC_API_URL as string) ||
+  (extra.apiUrl as string) ||
+  'https://movies-vault-production.up.railway.app';
+
+// ── TMDB ─────────────────────────────────────────────
+const TMDB_API_KEY: string =
+  (process.env.EXPO_PUBLIC_TMDB_API_KEY as string) ||
+  (extra.tmdbApiKey as string) ||
+  '2e9b43087d0f9736eab380d2151b3b8c';
+
+// ── GOOGLE ───────────────────────────────────────────
+const GOOGLE_CLIENT_ID: string =
+  (process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID as string) ||
+  '289796269059-271uqrpni6iovil59pmqe51qckpj9j7a.apps.googleusercontent.com';
+
+const GOOGLE_ANDROID_CLIENT_ID: string =
+  (process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID as string) ||
+  '289796269059-f96po61l248r9mtr6pksk3knqntav10i.apps.googleusercontent.com';
+
+// ─────────────────────────────────────────────────────
+// Consolidated ENV object — use this everywhere
+// ─────────────────────────────────────────────────────
 export const ENV = {
-  CLERK_PUBLISHABLE_KEY: process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || '',
-  API_URL: process.env.EXPO_PUBLIC_API_URL || 'https://movies-vault-production.up.railway.app',
-  TMDB_API_KEY: process.env.EXPO_PUBLIC_TMDB_API_KEY || '2e9b43087d0f9736eab380d2151b3b8c',
-  GOOGLE_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '',
-  GOOGLE_ANDROID_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '',
-};
+  CLERK_PUBLISHABLE_KEY,
+  API_URL,
+  TMDB_API_KEY,
+  GOOGLE_CLIENT_ID,
+  GOOGLE_ANDROID_CLIENT_ID,
+} as const;
 
-// Validate and log warnings — but NEVER throw
-export const validateEnv = () => {
-  const checks = [
-    { key: 'EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY', value: ENV.CLERK_PUBLISHABLE_KEY },
-    { key: 'EXPO_PUBLIC_API_URL', value: ENV.API_URL },
-    { key: 'EXPO_PUBLIC_TMDB_API_KEY', value: ENV.TMDB_API_KEY },
-  ];
+// ─────────────────────────────────────────────────────
+// Startup validator — logs warnings, NEVER throws
+// ─────────────────────────────────────────────────────
+export function validateEnv(): { clerkKey: string; apiUrl: string; tmdbKey: string } {
+  console.log('[MovieVault] ENV check:', {
+    clerk: !!CLERK_PUBLISHABLE_KEY ? '✅' : '❌',
+    api: !!API_URL ? '✅' : '❌',
+    tmdb: !!TMDB_API_KEY ? '✅' : '❌',
+  });
 
-  const missing = checks.filter(c => !c.value);
-  
-  if (missing.length > 0) {
-    console.warn(
-      `[MovieVault] Missing env vars: ${missing.map(m => m.key).join(', ')}. Using fallbacks.`
-    );
-  } else {
-    console.log('[MovieVault] All environment variables loaded successfully.');
+  if (!CLERK_PUBLISHABLE_KEY) {
+    console.error('[MovieVault] CRITICAL: Clerk key missing — auth will fail');
   }
 
   return {
-    clerkKey: ENV.CLERK_PUBLISHABLE_KEY,
-    apiUrl: ENV.API_URL,
-    tmdbKey: ENV.TMDB_API_KEY,
+    clerkKey: CLERK_PUBLISHABLE_KEY,
+    apiUrl: API_URL,
+    tmdbKey: TMDB_API_KEY,
   };
-};
+}

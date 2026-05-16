@@ -1,13 +1,12 @@
 import axios from 'axios';
-import Constants from 'expo-constants';
+import { ENV } from '../config/env';
 
-// For production, you should ideally proxy TMDB requests through your backend to hide the API key
-// For this example, we'll use it directly if configured, otherwise fallback to our backend
-const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY || '2e9b43087d0f9736eab380d2151b3b8c';
+const TMDB_API_KEY = ENV.TMDB_API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 
 const tmdbApi = axios.create({
   baseURL: BASE_URL,
+  timeout: 10000,
   params: {
     api_key: TMDB_API_KEY,
   },

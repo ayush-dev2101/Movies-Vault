@@ -4,84 +4,71 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, Text } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { ClerkProvider } from "@clerk/clerk-expo";
-import { tokenCache } from "./src/config/clerk";
+import { ClerkProvider } from '@clerk/clerk-expo';
+import { tokenCache } from './src/config/clerk';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import * as SplashScreen from 'expo-splash-screen';
+import { ENV, validateEnv } from './src/config/env';
 
-// Prevent splash screen from auto-hiding (safe call)
+// Prevent native splash from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-// ──────────────────────────────────────────────
-// PRODUCTION-SAFE environment variable loading
-// Instead of throwing (which kills the app before ErrorBoundary mounts),
-// we log warnings and use fallbacks.
-// ──────────────────────────────────────────────
-const CLERK_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://movies-vault-production.up.railway.app';
-const TMDB_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY || '';
-
-if (!CLERK_KEY) {
-  console.warn('[MovieVault] WARNING: EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is missing!');
-}
-if (!TMDB_KEY) {
-  console.warn('[MovieVault] WARNING: EXPO_PUBLIC_TMDB_API_KEY is missing!');
-}
-
-console.log('[MovieVault] App module loaded. Clerk key present:', !!CLERK_KEY);
+// Log env status at startup — never throws
+validateEnv();
 
 export default function App() {
   const [appReady, setAppReady] = useState(false);
 
+  // Step 1: Prepare assets/resources
   useEffect(() => {
-    // Give the app a moment to stabilize, then hide splash
-    // This replaces the unreliable useFonts({}) empty-object pattern
     const prepare = async () => {
       try {
-        // If you have custom fonts, load them here:
-        // await Font.loadAsync({ 'CustomFont': require('./assets/fonts/CustomFont.ttf') });
-        console.log('[MovieVault] App preparation complete');
+        // Add any Font.loadAsync() calls here if needed
+        console.log('[MovieVault] App bootstrap started');
+        console.log('[MovieVault] Clerk key:', ENV.CLERK_PUBLISHABLE_KEY ? '✅ present' : '❌ missing');
+        console.log('[MovieVault] API URL:', ENV.API_URL);
       } catch (e) {
-        console.warn('[MovieVault] Font/asset loading error:', e);
+        console.warn('[MovieVault] Bootstrap warning:', e);
       } finally {
         setAppReady(true);
       }
     };
-
     prepare();
   }, []);
 
+  // Step 2: Hide splash once app is ready
   useEffect(() => {
     if (appReady) {
-      console.log('[MovieVault] Hiding splash screen');
       SplashScreen.hideAsync().catch(() => {});
+      console.log('[MovieVault] Splash hidden, rendering UI');
     }
   }, [appReady]);
 
-  // Failsafe: Force hide splash after 5 seconds no matter what
+  // Step 3: Failsafe — force hide splash after 5 seconds no matter what
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (!appReady) {
-        console.warn('[MovieVault] FAILSAFE: Force-hiding splash after 5s timeout');
-        setAppReady(true);
-        SplashScreen.hideAsync().catch(() => {});
-      }
+      console.warn('[MovieVault] FAILSAFE: Force-hiding splash after 5s');
+      setAppReady(true);
+      SplashScreen.hideAsync().catch(() => {});
     }, 5000);
     return () => clearTimeout(timeout);
   }, []);
 
   if (!appReady) {
-    return null; // Native splash screen is still visible
+    return null; // Native splash screen visible
   }
 
-  // If Clerk key is completely missing, show a helpful error instead of crashing
-  if (!CLERK_KEY) {
+  // Show helpful error if Clerk key is truly missing after all fallbacks
+  if (!ENV.CLERK_PUBLISHABLE_KEY) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0F0F0F', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-        <Text style={{ color: '#FF3B30', fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>Configuration Error</Text>
-        <Text style={{ color: '#A0A0A0', fontSize: 14, textAlign: 'center' }}>
-          EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is missing. Please check your .env file and rebuild.
+      <View style={{ flex: 1, backgroundColor: '#080808', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+        <Text style={{ color: '#FF3B30', fontSize: 22, fontWeight: 'bold', marginBottom: 12 }}>
+          Configuration Error
+        </Text>
+        <Text style={{ color: '#A0A0A0', fontSize: 14, textAlign: 'center', lineHeight: 22 }}>
+          Authentication service failed to initialize.{'\n'}
+          Please reinstall the app or contact support.
         </Text>
       </View>
     );
@@ -89,10 +76,10 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <ClerkProvider publishableKey={CLERK_KEY} tokenCache={tokenCache}>
+      <ClerkProvider publishableKey={ENV.CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
         <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#080808' }}>
           <SafeAreaProvider>
-            <NavigationContainer 
+            <NavigationContainer
               fallback={
                 <View style={{ flex: 1, backgroundColor: '#080808', justifyContent: 'center', alignItems: 'center' }}>
                   <ActivityIndicator size="large" color="#FF3B30" />
