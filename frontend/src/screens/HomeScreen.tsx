@@ -28,22 +28,30 @@ const HomeScreen = () => {
 
   const fetchMovies = async () => {
     try {
-      const [trendingData, popularData, topRatedData] = await Promise.all([
+      console.log("[MovieVault] Fetching movies...");
+      // We fetch each category independently so one failure doesn't kill the whole screen
+      const results = await Promise.allSettled([
         getTrendingMovies(),
         getPopularMovies(),
         getTopRatedMovies()
       ]);
-      setTrending(trendingData);
-      setPopular(popularData);
-      setTopRated(topRatedData);
+
+      const [trendingRes, popularRes, topRatedRes] = results;
+
+      if (trendingRes.status === 'fulfilled') setTrending(trendingRes.value || []);
+      if (popularRes.status === 'fulfilled') setPopular(popularRes.value || []);
+      if (topRatedRes.status === 'fulfilled') setTopRated(topRatedRes.value || []);
+      
     } catch (error) {
-      console.error('Error fetching movies:', error);
+      console.error('[MovieVault] Critical Fetch Error:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const onMoviePress = (movie: any) => {
+    if (!movie?.id) return;
+    
     if (!user) {
       showAuthModal(() => navigation.navigate('MovieDetails', { movieId: movie.id }));
     } else {
@@ -55,12 +63,12 @@ const HomeScreen = () => {
     <View style={styles.sectionContainer}>
       <Text style={styles.sectionTitle}>{title}</Text>
       <FlatList
-        data={data}
-        keyExtractor={(item) => item.id.toString()}
+        data={Array.isArray(data) ? data : []} // Final safety guard
+        keyExtractor={(item) => item?.id?.toString() || Math.random().toString()}
         horizontal
         showsHorizontalScrollIndicator={false}
         renderItem={({ item }) => (
-          <MovieCard movie={item} onPress={onMoviePress} width={120} />
+          item ? <MovieCard movie={item} onPress={onMoviePress} width={120} /> : null
         )}
         contentContainerStyle={styles.listContainer}
       />

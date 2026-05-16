@@ -27,26 +27,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loadStoredAuth = async () => {
+    console.log("[MovieVault] Initializing Auth State...");
     try {
       let storedToken = null;
-      let storedUser = null;
+      let storedUserString = null;
 
+      // Use a race or simple try/catch to prevent storage hangs
       if (Platform.OS === 'web') {
         storedToken = localStorage.getItem('userToken');
-        storedUser = localStorage.getItem('userData');
+        storedUserString = localStorage.getItem('userData');
       } else {
-        storedToken = await SecureStore.getItemAsync('userToken');
-        storedUser = await SecureStore.getItemAsync('userData');
+        // SecureStore can sometimes fail if the device is under heavy load
+        try {
+          storedToken = await SecureStore.getItemAsync('userToken');
+          storedUserString = await SecureStore.getItemAsync('userData');
+        } catch (storageError) {
+          console.warn("[MovieVault] SecureStore access failed:", storageError);
+        }
       }
       
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+      if (storedToken && storedUserString) {
+        try {
+          const parsedUser = JSON.parse(storedUserString);
+          setToken(storedToken);
+          setUser(parsedUser);
+          console.log("[MovieVault] Auth state restored successfully");
+        } catch (parseError) {
+          console.error("[MovieVault] Corrupted user data found, clearing storage:", parseError);
+          // If data is corrupted, we must clear it to prevent infinite crashes
+          await logout(); 
+        }
       }
     } catch (e) {
-      console.error('Failed to load auth state', e);
+      console.error('[MovieVault] Critical Auth Initialization Error:', e);
     } finally {
+      // ABSOLUTE GUARANTEE: The app will stop loading here
       setIsLoading(false);
+      console.log("[MovieVault] Auth Initialization Complete.");
     }
   };
 

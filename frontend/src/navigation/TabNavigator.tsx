@@ -13,12 +13,23 @@ import { useAuth } from '../context/AuthContext';
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const TabNavigator = () => {
-  const { user, showAuthModal } = useAuth();
+  let auth;
+  try {
+    auth = useAuth();
+  } catch (e) {
+    console.error("[MovieVault] TabNavigator Auth Error:", e);
+  }
+
+  const { user, showAuthModal } = auth || { user: null, showAuthModal: () => {} };
 
   const handleProtectedTabPress = (e: any, targetScreen: string) => {
-    if (!user) {
-      e.preventDefault();
-      showAuthModal();
+    try {
+      if (!user) {
+        e.preventDefault();
+        showAuthModal();
+      }
+    } catch (error) {
+      console.error("[MovieVault] Tab Press Error:", error);
     }
   };
 
@@ -26,7 +37,7 @@ const TabNavigator = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName: any;
+          let iconName: any = 'film-outline'; // Default fallback icon
 
           if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
