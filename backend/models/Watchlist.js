@@ -12,6 +12,7 @@ const watchlistSchema = new mongoose.Schema({
   },
   title: String,
   posterPath: String,
+  backdropPath: String,
   rating: Number,
   releaseDate: String
 }, {

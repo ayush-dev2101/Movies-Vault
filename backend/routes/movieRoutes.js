@@ -15,16 +15,12 @@ router.post('/sync-user', syncUser);
 
 router.use(protect);
 
-router.route('/favorites')
-  .get(getFavorites)
-  .post(addToFavorites);
+router.get('/favorites', getFavorites);
+router.post('/favorites/add', addToFavorites);
+router.delete('/favorites/remove/:movieId', removeFromFavorites);
 
-router.delete('/favorites/:movieId', removeFromFavorites);
-
-router.route('/watchlist')
-  .get(getWatchlist)
-  .post(addToWatchlist);
-
-router.delete('/watchlist/:movieId', removeFromWatchlist);
+router.get('/watchlist', getWatchlist);
+router.post('/watchlist/add', addToWatchlist);
+router.delete('/watchlist/remove/:movieId', removeFromWatchlist);
 
 module.exports = router;

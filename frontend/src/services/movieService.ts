@@ -16,12 +16,12 @@ export const movieService = {
   },
 
   addToWatchlist: async (movie: MovieData) => {
-    const response = await api.post('/movies/watchlist', movie);
+    const response = await api.post('/movies/watchlist/add', movie);
     return response.data;
   },
 
   removeFromWatchlist: async (movieId: number) => {
-    const response = await api.delete(`/movies/watchlist/${movieId}`);
+    const response = await api.delete(`/movies/watchlist/remove/${movieId}`);
     return response.data;
   },
 
@@ -32,12 +32,12 @@ export const movieService = {
   },
 
   addToFavorites: async (movie: MovieData) => {
-    const response = await api.post('/movies/favorites', movie);
+    const response = await api.post('/movies/favorites/add', movie);
     return response.data;
   },
 
   removeFromFavorites: async (movieId: number) => {
-    const response = await api.delete(`/movies/favorites/${movieId}`);
+    const response = await api.delete(`/movies/favorites/remove/${movieId}`);
     return response.data;
   },
 

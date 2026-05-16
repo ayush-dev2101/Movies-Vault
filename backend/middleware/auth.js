@@ -6,9 +6,9 @@ const protect = async (req, res, next) => {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       token = req.headers.authorization.split(' ')[1];
+      console.log(`[Backend-Trace] Auth Middleware - Extracted Token Length: ${token.length}`);
       
       // Try to find user by Clerk ID (if token is a Clerk user ID or JWT)
-      // Note: In a full production app, you'd use @clerk/clerk-sdk-node here
       let user = await User.findOne({ clerkId: token });
       
       // If not found by Clerk ID, try finding by MongoDB ID (fallback for old system)
@@ -17,13 +17,15 @@ const protect = async (req, res, next) => {
       }
 
       if (!user) {
+        console.log(`[Backend-Trace] Auth Middleware - User lookup failed for token: ${token}`);
         return res.status(401).json({ message: 'User not found in database. Please sync.' });
       }
 
+      console.log(`[Backend-Trace] Auth Middleware - Authenticated User ID: ${user._id}`);
       req.user = user;
       next();
     } catch (error) {
-      console.error('[Backend] Auth Error:', error.message);
+      console.error('[Backend-Trace] Auth Error:', error.message);
       res.status(401).json({ message: 'Not authorized' });
     }
   }

@@ -24,7 +24,8 @@ const MovieDetailsScreen = () => {
   const navigation = useNavigation<any>();
   
   // Accept both movieId (from Home) or movie object (from Watchlist/Favorites)
-  const resolvedId = route.params?.movieId || route.params?.movie?.id || route.params?.movie?.movieId;
+  const rawId = route.params?.movieId || route.params?.movie?.id || route.params?.movie?.movieId;
+  const resolvedId = rawId ? Number(rawId) : 0;
   
   const [movie, setMovie] = useState<any>(route.params?.movie || null);
   const [loading, setLoading] = useState(!route.params?.movie);
@@ -34,8 +35,10 @@ const MovieDetailsScreen = () => {
   const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
-    fetchDetails();
-    checkSavedStatus();
+    if (resolvedId) {
+      fetchDetails();
+      checkSavedStatus();
+    }
   }, [resolvedId]);
 
   const checkSavedStatus = async () => {
@@ -45,8 +48,8 @@ const MovieDetailsScreen = () => {
         movieService.getFavorites()
       ]);
       
-      setInWatchlist(watchlist.some((m: any) => m.movieId === resolvedId));
-      setIsFavorite(favorites.some((m: any) => m.movieId === resolvedId));
+      setInWatchlist(watchlist.some((m: any) => Number(m.movieId) === resolvedId));
+      setIsFavorite(favorites.some((m: any) => Number(m.movieId) === resolvedId));
     } catch (e) {
       console.warn('[MovieVault] Error checking sync status:', e);
     }
@@ -67,48 +70,62 @@ const MovieDetailsScreen = () => {
   };
 
   const toggleWatchlist = async () => {
-    if (syncing) return;
+    if (syncing || !resolvedId) return;
     setSyncing(true);
+    console.log(`[Frontend-Trace] Clicked 'Add to Watchlist' for Movie ID: ${resolvedId}`);
     try {
       if (inWatchlist) {
         await movieService.removeFromWatchlist(resolvedId);
         setInWatchlist(false);
       } else {
-        await movieService.addToWatchlist({
+        const payload = {
           movieId: resolvedId,
           title: movie.title,
           posterPath: movie.poster_path || movie.posterPath,
+          backdropPath: movie.backdrop_path || movie.backdropPath,
           rating: movie.vote_average || movie.rating,
           releaseDate: movie.release_date || movie.releaseDate
-        });
+        };
+        console.log(`[Frontend-Trace] Preparing to sync Watchlist with payload:`, payload);
+        await movieService.addToWatchlist(payload);
         setInWatchlist(true);
       }
     } catch (error: any) {
-      Alert.alert('Sync Error', 'Failed to update watchlist on server.');
+      const msg = error.message === 'Server timeout. Please try again.' 
+        ? error.message 
+        : 'Failed to update watchlist on server.';
+      Alert.alert('Sync Error', msg);
     } finally {
       setSyncing(false);
     }
   };
 
   const toggleFavorite = async () => {
-    if (syncing) return;
+    if (syncing || !resolvedId) return;
     setSyncing(true);
+    console.log(`[Frontend-Trace] Clicked 'Add to Favorites' for Movie ID: ${resolvedId}`);
     try {
       if (isFavorite) {
         await movieService.removeFromFavorites(resolvedId);
         setIsFavorite(false);
       } else {
-        await movieService.addToFavorites({
+        const payload = {
           movieId: resolvedId,
           title: movie.title,
           posterPath: movie.poster_path || movie.posterPath,
+          backdropPath: movie.backdrop_path || movie.backdropPath,
           rating: movie.vote_average || movie.rating,
           releaseDate: movie.release_date || movie.releaseDate
-        });
+        };
+        console.log(`[Frontend-Trace] Preparing to sync Favorites with payload:`, payload);
+        await movieService.addToFavorites(payload);
         setIsFavorite(true);
       }
     } catch (error: any) {
-      Alert.alert('Sync Error', 'Failed to update favorites on server.');
+      const msg = error.message === 'Server timeout. Please try again.' 
+        ? error.message 
+        : 'Failed to update favorites on server.';
+      Alert.alert('Sync Error', msg);
     } finally {
       setSyncing(false);
     }
