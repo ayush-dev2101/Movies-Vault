@@ -15,6 +15,7 @@ import Colors from '../constants/Colors';
 import { getMovieDetails, getImageUrl } from '../services/tmdb';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import CustomButton from '../components/CustomButton';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const POSTER_HEIGHT = SCREEN_WIDTH * 1.5; // Aspect ratio 2:3
@@ -32,14 +33,33 @@ const MovieDetailsScreen = () => {
   useEffect(() => {
     if (movieId) {
       fetchDetails();
+      checkSavedStatus();
     }
   }, [movieId]);
+
+  const checkSavedStatus = async () => {
+    try {
+      const watchlist = await AsyncStorage.getItem('watchlist');
+      const favorites = await AsyncStorage.getItem('favorites');
+      
+      if (watchlist) {
+        const list = JSON.parse(watchlist);
+        setInWatchlist(list.some((m: any) => m.id === movieId));
+      }
+      
+      if (favorites) {
+        const list = JSON.parse(favorites);
+        setIsFavorite(list.some((m: any) => m.id === movieId));
+      }
+    } catch (e) {
+      console.error('Error checking saved status', e);
+    }
+  };
 
   const fetchDetails = async () => {
     try {
       const data = await getMovieDetails(movieId);
       setMovie(data);
-      // In a real app, you'd also check your backend if it's in user's favorites/watchlist
     } catch (error) {
       console.error('Error fetching movie details:', error);
     } finally {
@@ -47,14 +67,40 @@ const MovieDetailsScreen = () => {
     }
   };
 
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
-    // Call backend API here
+  const toggleFavorite = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('favorites');
+      let list = stored ? JSON.parse(stored) : [];
+      
+      if (isFavorite) {
+        list = list.filter((m: any) => m.id !== movie.id);
+      } else {
+        list.push(movie);
+      }
+      
+      await AsyncStorage.setItem('favorites', JSON.stringify(list));
+      setIsFavorite(!isFavorite);
+    } catch (e) {
+      console.error('Error toggling favorite', e);
+    }
   };
 
-  const toggleWatchlist = () => {
-    setInWatchlist(!inWatchlist);
-    // Call backend API here
+  const toggleWatchlist = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('watchlist');
+      let list = stored ? JSON.parse(stored) : [];
+      
+      if (inWatchlist) {
+        list = list.filter((m: any) => m.id !== movie.id);
+      } else {
+        list.push(movie);
+      }
+      
+      await AsyncStorage.setItem('watchlist', JSON.stringify(list));
+      setInWatchlist(!inWatchlist);
+    } catch (e) {
+      console.error('Error toggling watchlist', e);
+    }
   };
 
   if (loading || !movie) {

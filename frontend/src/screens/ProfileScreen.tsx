@@ -4,7 +4,7 @@ import { useUser, useAuth } from '@clerk/clerk-expo';
 import Colors from '../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 
-const ProfileScreen = () => {
+const ProfileScreen = ({ navigation }: any) => {
   const { user } = useUser();
   const { signOut } = useAuth();
 
@@ -37,7 +37,7 @@ const ProfileScreen = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account Settings</Text>
           
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Notifications')}>
             <View style={styles.menuLeft}>
               <Ionicons name="notifications-outline" size={22} color={Colors.text} />
               <Text style={styles.menuText}>Notifications</Text>
@@ -45,7 +45,7 @@ const ProfileScreen = () => {
             <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('PrivacyPolicy')}>
             <View style={styles.menuLeft}>
               <Ionicons name="shield-checkmark-outline" size={22} color={Colors.text} />
               <Text style={styles.menuText}>Privacy & Security</Text>
@@ -53,7 +53,7 @@ const ProfileScreen = () => {
             <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('HelpCenter')}>
             <View style={styles.menuLeft}>
               <Ionicons name="help-circle-outline" size={22} color={Colors.text} />
               <Text style={styles.menuText}>Help Center</Text>
@@ -93,15 +93,12 @@ const styles = StyleSheet.create({
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     padding: 20,
     borderRadius: 20,
     marginBottom: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
   },
   avatar: {
     width: 70,
@@ -138,7 +135,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
@@ -157,11 +154,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     padding: 18,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 59, 48, 0.1)',
+    borderColor: 'rgba(255, 59, 48, 0.2)',
   },
   logoutText: {
     fontSize: 16,
