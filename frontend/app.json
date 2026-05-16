@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "MovieVault",
+    "slug": "movie-vault",
     "scheme": "movievault",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,21 +14,18 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.frontend",
-      "googleServicesFile": "./google-services.json"
+      "package": "com.ayush.movievault"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
       "expo-secure-store",
@@ -38,6 +35,11 @@
           "iosUrlScheme": "com.googleusercontent.apps.YOUR_IOS_CLIENT_ID"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d2811ff1-d24c-47d1-9249-bb11b3c22d80"
+      }
+    }
   }
 }

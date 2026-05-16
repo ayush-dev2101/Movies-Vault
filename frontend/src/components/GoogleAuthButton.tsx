@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View, Alert } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/Colors';
 import { useAuth } from '../context/AuthContext';
@@ -25,12 +25,18 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
 
   const handlePress = async () => {
     setLoading(true);
+      if (Platform.OS === 'web') {
+        Alert.alert('Notice', 'Google Sign-In is currently only available on the mobile app. Please use the standard Login/Signup for the web demo.');
+        setLoading(false);
+        return;
+      }
+
     try {
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
       await GoogleSignin.signOut(); // prevents stale cached session
 
-      const response = await GoogleSignin.signIn();
-      const idToken = response.data?.idToken ?? response.idToken;
+      const googleRes = await GoogleSignin.signIn();
+      const idToken = googleRes.data?.idToken;
 
       if (!idToken) {
         Alert.alert('Error', 'Google sign-in failed — no token received');
@@ -38,15 +44,15 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
         return;
       }
 
-      const response = await fetch(`${API_URL}/api/auth/google`, {
+      const apiRes = await fetch(`${API_URL}/api/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
       });
 
-      const data = await response.json();
+      const data = await apiRes.json();
 
-      if (!response.ok) {
+      if (!apiRes.ok) {
         Alert.alert('Error', data.message || 'Google login failed');
         setLoading(false);
         return;

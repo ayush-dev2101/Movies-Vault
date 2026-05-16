@@ -1,0 +1,8 @@
+{
+  "name": "movie-vault-root",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "cd backend && node index.js",
+    "install": "cd backend && npm install"
+  }
+}
