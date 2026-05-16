@@ -224,6 +224,8 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    height: 60, // Fixed height prevents layout flicker during loading state
     elevation: 6,
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 6 },
