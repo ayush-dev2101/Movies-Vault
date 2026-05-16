@@ -1,9 +1,9 @@
 const Colors = {
   primary: '#FF3B30', // Cinematic Red
   secondary: '#1C1C1E', // Dark Grey/Black
-  background: '#FFFFFF', // Light Theme Background
-  surface: '#F2F2F7', // Soft Grey Surface
-  text: '#000000',
+  background: '#0F0F0F', // Pure Cinematic Dark
+  surface: '#1C1C1E', // Dark Surface
+  text: '#FFFFFF',
   textSecondary: '#8E8E93',
   white: '#FFFFFF',
   error: '#FF3B30',

@@ -8,18 +8,20 @@ import { CLERK_PUBLISHABLE_KEY, tokenCache } from "./src/config/clerk";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function App() {
+  if (!CLERK_PUBLISHABLE_KEY) {
+    console.error("[MovieVault] Error: EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is missing from .env");
+  }
+
   return (
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
-      <ClerkLoaded>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <SafeAreaProvider>
-            <NavigationContainer>
-              <AppNavigator />
-              <StatusBar style="auto" />
-            </NavigationContainer>
-          </SafeAreaProvider>
-        </GestureHandlerRootView>
-      </ClerkLoaded>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#0F0F0F' }}>
+        <SafeAreaProvider>
+          <NavigationContainer>
+            <AppNavigator />
+            <StatusBar style="light" />
+          </NavigationContainer>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     </ClerkProvider>
   );
 }
