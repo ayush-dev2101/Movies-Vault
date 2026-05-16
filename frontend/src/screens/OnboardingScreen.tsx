@@ -1,32 +1,45 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, SafeAreaView } from 'react-native';
 import Colors from '../constants/Colors';
 import { useNavigation } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
+
+const { width, height } = Dimensions.get('window');
 
 const OnboardingScreen = () => {
   const navigation = useNavigation<any>();
 
   return (
     <View style={styles.container}>
-      <View style={styles.imageContainer}>
-        <Image 
-          source={require('../../assets/logo.png')} 
-          style={styles.logoImage}
-          resizeMode="contain"
-        />
+      <StatusBar style="light" />
+      <View style={styles.imageWrapper}>
+        <View style={styles.logoContainer}>
+          <Image 
+            source={require('../../assets/images/logo.png')} 
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+        </View>
+        <View style={styles.gradientOverlay} />
       </View>
-      <View style={styles.content}>
-        <Text style={styles.title}>Your Ultimate Movie Guide</Text>
-        <Text style={styles.description}>
-          Discover, track, and review your favorite movies and TV shows in one place.
-        </Text>
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => navigation.navigate('Auth')}
-        >
-          <Text style={styles.buttonText}>Get Started</Text>
-        </TouchableOpacity>
-      </View>
+      
+      <SafeAreaView style={styles.safeContent}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Movie<Text style={{color: Colors.primary}}>Vault</Text></Text>
+          <Text style={styles.subtitle}>Your Ultimate Movie Guide</Text>
+          <Text style={styles.description}>
+            Discover, track, and review your favorite movies and TV shows in one place. Experience cinema like never before.
+          </Text>
+          
+          <TouchableOpacity 
+            style={styles.button}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('Auth')}
+          >
+            <Text style={styles.buttonText}>Get Started</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     </View>
   );
 };
@@ -36,57 +49,85 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  imageContainer: {
-    flex: 0.6,
+  imageWrapper: {
+    height: height * 0.6,
+    width: '100%',
+    backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.secondary, // Deep dark background for logo
-    borderBottomLeftRadius: 60,
-    borderBottomRightRadius: 60,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
+  },
+  logoContainer: {
+    width: width * 0.8,
+    height: width * 0.8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 20,
-    overflow: 'hidden',
+    shadowRadius: 30,
+    elevation: 25,
   },
   logoImage: {
-    width: '70%',
-    height: '70%',
+    width: '100%',
+    height: '100%',
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 150,
+    backgroundColor: Colors.background, // Fades into the background
+    opacity: 0.9,
+  },
+  safeContent: {
+    flex: 1,
   },
   content: {
-    flex: 0.4,
+    flex: 1,
     paddingHorizontal: 30,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -40, // Pull content up over the image wrapper
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 15,
+    fontSize: 42,
+    fontWeight: '900',
+    color: Colors.white,
+    letterSpacing: 1,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+    marginBottom: 20,
+    marginTop: 5,
   },
   description: {
-    fontSize: 16,
-    color: Colors.textSecondary,
+    fontSize: 15,
+    color: Colors.gray[400],
     textAlign: 'center',
     marginBottom: 40,
-    lineHeight: 24,
+    lineHeight: 22,
+    paddingHorizontal: 10,
   },
   button: {
     backgroundColor: Colors.primary,
-    paddingVertical: 15,
-    paddingHorizontal: 60,
-    borderRadius: 30,
+    width: '100%',
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: 'center',
     shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 15,
+    elevation: 10,
   },
   buttonText: {
     color: Colors.white,
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });
 
