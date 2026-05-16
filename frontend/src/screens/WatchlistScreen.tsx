@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Dimensions, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Colors from '../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
+import { movieService } from '../services/movieService';
 
 const { width } = Dimensions.get('window');
 
@@ -20,36 +20,44 @@ const WatchlistScreen = ({ navigation }: any) => {
   const loadWatchlist = async () => {
     try {
       setLoading(true);
-      const stored = await AsyncStorage.getItem('watchlist');
-      // Always update state (even to []) to clear stale data
-      setMovies(stored ? JSON.parse(stored) : []);
-    } catch (error) {
-      console.error('Failed to load watchlist', error);
-      setMovies([]);
+      const data = await movieService.getWatchlist();
+      setMovies(data);
+    } catch (error: any) {
+      console.error('[MovieVault] Failed to load watchlist:', error.message);
+      // Fallback: stay on current state or show error
+      Alert.alert('Sync Error', 'Could not sync watchlist with the server.');
     } finally {
       setLoading(false);
     }
   };
 
-  const removeItem = async (id: number) => {
-    const updated = movies.filter(m => m.id !== id);
-    setMovies(updated);
-    await AsyncStorage.setItem('watchlist', JSON.stringify(updated));
+  const removeItem = async (movieId: number) => {
+    try {
+      // Optimistic update
+      const previousMovies = [...movies];
+      setMovies(movies.filter(m => m.movieId !== movieId));
+      
+      await movieService.removeFromWatchlist(movieId);
+    } catch (error: any) {
+      console.error('[MovieVault] Failed to remove movie:', error.message);
+      Alert.alert('Error', 'Failed to remove movie. Please try again.');
+      loadWatchlist(); // Reload to sync back
+    }
   };
 
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity 
       style={styles.card}
-      onPress={() => navigation.navigate('MovieDetails', { movieId: item.id, movie: item })}
+      onPress={() => navigation.navigate('MovieDetails', { movieId: item.movieId, movie: item })}
     >
       <Image 
-        source={{ uri: `https://image.tmdb.org/t/p/w500${item.poster_path}` }} 
+        source={{ uri: `https://image.tmdb.org/t/p/w500${item.posterPath}` }} 
         style={styles.poster} 
       />
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-        <Text style={styles.rating}>⭐ {item.vote_average.toFixed(1)}</Text>
-        <TouchableOpacity onPress={() => removeItem(item.id)} style={styles.removeBtn}>
+        <Text style={styles.rating}>⭐ {item.rating?.toFixed(1) || 'N/A'}</Text>
+        <TouchableOpacity onPress={() => removeItem(item.movieId)} style={styles.removeBtn}>
           <Ionicons name="trash-outline" size={20} color={Colors.primary} />
           <Text style={styles.removeText}>Remove</Text>
         </TouchableOpacity>
@@ -73,8 +81,10 @@ const WatchlistScreen = ({ navigation }: any) => {
         <FlatList
           data={movies}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item.movieId.toString()}
           contentContainerStyle={styles.list}
+          onRefresh={loadWatchlist}
+          refreshing={loading}
         />
       )}
     </View>

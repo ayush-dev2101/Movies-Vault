@@ -8,7 +8,10 @@ const {
   getWatchlist,
   removeFromWatchlist
 } = require('../controllers/movieController');
+const { syncUser } = require('../controllers/userSyncController');
 const { protect } = require('../middleware/auth');
+
+router.post('/sync-user', syncUser);
 
 router.use(protect);
 

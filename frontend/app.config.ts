@@ -1,10 +1,8 @@
 import type { ExpoConfig, ConfigContext } from 'expo/config';
 
-// ─────────────────────────────────────────────────────
-// PRODUCTION-SAFE CONFIG
-// Values are hardcoded here as the source of truth.
-// These are EXPO_PUBLIC_ keys (safe to embed in client bundle).
-// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────
+// MovieVault - Pure Local Android Configuration
+// ─────────────────────────────────────────────────────────────────────
 
 const CLERK_KEY =
   process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ||
@@ -20,45 +18,62 @@ const TMDB_KEY =
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
+
+  // ── Identity ──────────────────────────────────────────
   name: 'MovieVault',
   slug: 'movie-vault',
   scheme: 'movievault',
   version: '1.0.0',
+
+  // ── Display ───────────────────────────────────────────
   orientation: 'portrait',
-  icon: './assets/icon.png',
   userInterfaceStyle: 'dark',
-  newArchEnabled: false, // Disable New Architecture for production stability
+  icon: './assets/icon.png',
+
+  // ── Architecture ──────────────────────────────────────
+  newArchEnabled: false,
+
+  // ── Splash Screen ─────────────────────────────────────
   splash: {
     image: './assets/splash-icon.png',
     resizeMode: 'contain',
     backgroundColor: '#080808',
   },
-  ios: {
-    supportsTablet: true,
-  },
+
+  // ── Android ───────────────────────────────────────────
   android: {
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#080808',
     },
     package: 'com.ayush.movievault',
+    versionCode: 1,
+    permissions: [
+      'INTERNET',
+      'ACCESS_NETWORK_STATE'
+    ],
   },
-  web: {
-    favicon: './assets/favicon.png',
-    bundler: 'metro',
-  },
+
+  // ── Plugins ───────────────────────────────────────────
   plugins: [
     'expo-secure-store',
     'expo-font',
+    [
+      'expo-splash-screen',
+      {
+        backgroundColor: '#080808',
+        image: './assets/splash-icon.png',
+        imageWidth: 200,
+      },
+    ],
   ],
+
   assetBundlePatterns: ['**/*'],
+
+  // ── Extra (Always available in APK) ──────────────────
   extra: {
-    // These values are embedded into the production bundle
     clerkPublishableKey: CLERK_KEY,
     apiUrl: API_URL,
     tmdbApiKey: TMDB_KEY,
-    eas: {
-      projectId: 'd2811ff1-d24c-47d1-9249-bb11b3c22d80',
-    },
   },
 });

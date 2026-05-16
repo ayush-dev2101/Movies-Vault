@@ -10,6 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import * as SplashScreen from 'expo-splash-screen';
 import { ENV, validateEnv } from './src/config/env';
+import AuthSync from './src/components/AuthSync';
 
 // Prevent native splash from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -77,6 +78,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ClerkProvider publishableKey={ENV.CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
+        <AuthSync />
         <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#080808' }}>
           <SafeAreaProvider>
             <NavigationContainer

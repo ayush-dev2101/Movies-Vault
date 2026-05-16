@@ -1,25 +1,48 @@
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5001/api';
+import { ENV } from '../config/env';
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: ENV.API_URL,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add a request interceptor to include the auth token
+// Request Interceptor: Inject Clerk Token
+// Note: We will call a setter function from the App/Auth provider to update the token
+let authToken: string | null = null;
+
+export const setAuthToken = (token: string | null) => {
+  authToken = token;
+};
+
 api.interceptors.request.use(
   async (config) => {
-    const token = await SecureStore.getItemAsync('userToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (authToken) {
+      config.headers.Authorization = `Bearer ${authToken}`;
     }
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response Interceptor: Handle Global Errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response ? error.response.status : null;
+
+    if (status === 401) {
+      console.warn('[MovieVault] Unauthorized request - checking session...');
+    }
+
+    if (status === 408 || error.code === 'ECONNABORTED') {
+      console.error('[MovieVault] Request Timeout - check network stability');
+    }
+
     return Promise.reject(error);
   }
 );

@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Dimensions, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Colors from '../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
+import { movieService } from '../services/movieService';
 
 const { width } = Dimensions.get('window');
-const numColumns = 2;
-const cardWidth = (width - 60) / numColumns;
 
 const FavoritesScreen = ({ navigation }: any) => {
   const [movies, setMovies] = useState<any[]>([]);
@@ -22,29 +20,44 @@ const FavoritesScreen = ({ navigation }: any) => {
   const loadFavorites = async () => {
     try {
       setLoading(true);
-      const stored = await AsyncStorage.getItem('favorites');
-      setMovies(stored ? JSON.parse(stored) : []);
-    } catch (error) {
-      console.error('Failed to load favorites', error);
-      setMovies([]);
+      const data = await movieService.getFavorites();
+      setMovies(data);
+    } catch (error: any) {
+      console.error('[MovieVault] Failed to load favorites:', error.message);
+      Alert.alert('Sync Error', 'Could not sync favorites with the server.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const removeItem = async (movieId: number) => {
+    try {
+      setMovies(movies.filter(m => m.movieId !== movieId));
+      await movieService.removeFromFavorites(movieId);
+    } catch (error: any) {
+      console.error('[MovieVault] Failed to remove favorite:', error.message);
+      Alert.alert('Error', 'Failed to remove from favorites.');
+      loadFavorites();
     }
   };
 
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity 
       style={styles.card}
-      onPress={() => navigation.navigate('MovieDetails', { movieId: item.id, movie: item })}
+      onPress={() => navigation.navigate('MovieDetails', { movieId: item.movieId, movie: item })}
     >
       <Image 
-        source={{ uri: `https://image.tmdb.org/t/p/w500${item.poster_path}` }} 
+        source={{ uri: `https://image.tmdb.org/t/p/w500${item.posterPath}` }} 
         style={styles.poster} 
       />
-      <View style={styles.badge}>
-        <Ionicons name="heart" size={16} color={Colors.white} />
+      <View style={styles.info}>
+        <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+        <Text style={styles.rating}>⭐ {item.rating?.toFixed(1) || 'N/A'}</Text>
+        <TouchableOpacity onPress={() => removeItem(item.movieId)} style={styles.removeBtn}>
+          <Ionicons name="heart" size={20} color={Colors.primary} />
+          <Text style={styles.removeText}>Remove</Text>
+        </TouchableOpacity>
       </View>
-      <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
     </TouchableOpacity>
   );
 
@@ -64,9 +77,10 @@ const FavoritesScreen = ({ navigation }: any) => {
         <FlatList
           data={movies}
           renderItem={renderItem}
-          numColumns={numColumns}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item.movieId.toString()}
           contentContainerStyle={styles.list}
+          onRefresh={loadFavorites}
+          refreshing={loading}
         />
       )}
     </View>
@@ -77,10 +91,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background, paddingHorizontal: 20 },
   header: { fontSize: 28, fontWeight: 'bold', color: Colors.text, marginTop: 60, marginBottom: 20 },
   list: { paddingBottom: 100 },
-  card: { width: cardWidth, marginBottom: 20, marginRight: 20 },
-  poster: { width: cardWidth, height: cardWidth * 1.5, borderRadius: 15 },
-  title: { color: Colors.text, marginTop: 8, fontWeight: '600', fontSize: 14 },
-  badge: { position: 'absolute', top: 10, right: 10, backgroundColor: Colors.primary, padding: 5, borderRadius: 10 },
+  card: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: 15, marginBottom: 15, overflow: 'hidden' },
+  poster: { width: 100, height: 150 },
+  info: { flex: 1, padding: 15, justifyContent: 'space-between' },
+  title: { fontSize: 18, fontWeight: 'bold', color: Colors.text },
+  rating: { color: Colors.primary, fontWeight: '600' },
+  removeBtn: { flexDirection: 'row', alignItems: 'center' },
+  removeText: { color: Colors.primary, marginLeft: 5, fontSize: 14 },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', opacity: 0.5 },
   emptyText: { color: Colors.text, fontSize: 18, marginTop: 10 }
 });

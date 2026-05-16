@@ -25,6 +25,11 @@ const userSchema = new mongoose.Schema({
     unique: true,
     sparse: true
   },
+  clerkId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
   avatar: {
     type: String,
     default: ''
