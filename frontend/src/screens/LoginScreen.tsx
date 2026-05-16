@@ -12,20 +12,21 @@ import {
   Alert
 } from 'react-native';
 import Colors from '../constants/Colors';
+import { useSignIn } from '@clerk/clerk-expo';
 import { useNavigation } from '@react-navigation/native';
-import API_URL from '../config/api';
-import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import GoogleAuthButton from '../components/GoogleAuthButton';
 
 const LoginScreen = () => {
+  const { signIn, setActive, isLoaded } = useSignIn();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<any>();
-  const { login } = useAuth();
 
   const handleLogin = async () => {
+    if (!isLoaded) return;
+    
     if (!email || !password) {
       Alert.alert('Error', 'Please fill out all fields.');
       return;
@@ -34,31 +35,16 @@ const LoginScreen = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      const completeSignIn = await signIn.create({
+        identifier: email,
+        password,
       });
 
-      const data = await response.json();
-
-      if (response.status === 403 && data.requiresVerification) {
-        Alert.alert(
-          'Verify Your Email',
-          'A new OTP has been sent to your email. Please verify to continue.',
-          [{ text: 'Verify Now', onPress: () => navigation.navigate('OTP', { email }) }]
-        );
-        return;
-      }
-
-      if (response.ok) {
-        await login({ name: data.name, email: data.email, avatar: data.avatar, id: data._id }, data.token);
-      } else {
-        Alert.alert('Login Failed', data.message || 'Invalid credentials');
-      }
-    } catch (error: any) {
-      console.error('Login Error:', error);
-      Alert.alert('Error', 'Could not reach server. Please check your internet connection.');
+      // This indicates the user is signed in
+      await setActive({ session: completeSignIn.createdSessionId });
+    } catch (err: any) {
+      console.error('Login Error:', err);
+      Alert.alert('Login Failed', err.errors?.[0]?.message || 'Invalid credentials');
     } finally {
       setLoading(false);
     }

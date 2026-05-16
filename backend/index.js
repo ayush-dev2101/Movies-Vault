@@ -11,6 +11,15 @@ const { errorHandler } = require('./middleware/error');
 
 const app = express();
 
+// Request Timeout Middleware (15s)
+app.use((req, res, next) => {
+  res.setTimeout(15000, () => {
+    console.error(`[${new Date().toISOString()}] Request Timeout: ${req.method} ${req.url}`);
+    res.status(408).send('Request Timeout');
+  });
+  next();
+});
+
 // Middleware
 app.use(express.json());
 app.use(cors());
@@ -25,7 +34,6 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Routes
-app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/movies', require('./routes/movieRoutes'));
 
 app.get('/', (req, res) => {

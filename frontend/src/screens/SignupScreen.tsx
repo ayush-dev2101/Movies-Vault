@@ -13,20 +13,21 @@ import {
 } from 'react-native';
 import Colors from '../constants/Colors';
 import { useNavigation } from '@react-navigation/native';
-import API_URL from '../config/api';
-import { useAuth } from '../context/AuthContext';
+import { useSignUp } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 import GoogleAuthButton from '../components/GoogleAuthButton';
 
 const SignupScreen = () => {
+  const { signUp, isLoaded } = useSignUp();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<any>();
-  const { login } = useAuth(); // Assume signup also logs them in or redirects
 
   const handleSignup = async () => {
+    if (!isLoaded) return;
+    
     try {
       setLoading(true);
 
@@ -35,29 +36,23 @@ const SignupScreen = () => {
         return;
       }
 
-      const response = await fetch(`${API_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+      // Start the signup process
+      await signUp.create({
+        firstName: name,
+        emailAddress: email,
+        password,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        Alert.alert('Error', data.message || 'Signup failed');
-        return;
-      }
+      // Send the verification code
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
 
       // Navigate to OTP screen on success
       Alert.alert('Success', 'Check your email for the verification code.');
       navigation.navigate('OTP', { email });
 
-    } catch (error: any) {
-      console.error('Signup error:', error.message);
-      Alert.alert(
-        'Connection Error',
-        'Could not reach server. Please check your internet connection.'
-      );
+    } catch (err: any) {
+      console.error('Signup error:', err);
+      Alert.alert('Signup Failed', err.errors?.[0]?.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }

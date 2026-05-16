@@ -9,8 +9,11 @@ const OnboardingScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.imageContainer}>
-        {/* Placeholder for onboarding image */}
-        <View style={styles.imagePlaceholder} />
+        <Image 
+          source={require('../../assets/logo.png')} 
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
       </View>
       <View style={styles.content}>
         <Text style={styles.title}>Your Ultimate Movie Guide</Text>
@@ -37,12 +40,19 @@ const styles = StyleSheet.create({
     flex: 0.6,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: Colors.secondary, // Deep dark background for logo
+    borderBottomLeftRadius: 60,
+    borderBottomRightRadius: 60,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 20,
+    overflow: 'hidden',
   },
-  imagePlaceholder: {
-    width: '80%',
-    height: '60%',
-    backgroundColor: Colors.surface,
-    borderRadius: 20,
+  logoImage: {
+    width: '70%',
+    height: '70%',
   },
   content: {
     flex: 0.4,

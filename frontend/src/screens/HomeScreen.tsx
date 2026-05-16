@@ -12,15 +12,15 @@ import Colors from '../constants/Colors';
 import MovieCard from '../components/MovieCard';
 import { getTrendingMovies, getPopularMovies, getTopRatedMovies } from '../services/tmdb';
 import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../context/AuthContext';
+import { useUser } from '@clerk/clerk-expo';
 
 const HomeScreen = () => {
-  const [trending, setTrending] = useState([]);
-  const [popular, setPopular] = useState([]);
-  const [topRated, setTopRated] = useState([]);
+  const { user } = useUser();
+  const [trending, setTrending] = useState<any[]>([]);
+  const [popular, setPopular] = useState<any[]>([]);
+  const [topRated, setTopRated] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<any>();
-  const { user, showAuthModal } = useAuth();
 
   useEffect(() => {
     fetchMovies();
@@ -51,12 +51,7 @@ const HomeScreen = () => {
 
   const onMoviePress = (movie: any) => {
     if (!movie?.id) return;
-    
-    if (!user) {
-      showAuthModal(() => navigation.navigate('MovieDetails', { movieId: movie.id }));
-    } else {
-      navigation.navigate('MovieDetails', { movieId: movie.id });
-    }
+    navigation.navigate('MovieDetails', { movieId: movie.id });
   };
 
   const renderMovieSection = (title: string, data: any[]) => (

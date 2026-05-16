@@ -14,7 +14,7 @@ import Colors from '../constants/Colors';
 import MovieCard from '../components/MovieCard';
 import { searchMovies } from '../services/tmdb';
 import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../context/AuthContext';
+import { useUser } from '@clerk/clerk-expo';
 
 // Debounce hook could be in a separate file, but for simplicity we'll keep it here
 function useDebounce(value: string, delay: number) {
@@ -34,11 +34,11 @@ const cardWidth = (width - 40) / numColumns; // 20 padding on each side
 
 const SearchScreen = () => {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const debouncedQuery = useDebounce(query, 500);
   const navigation = useNavigation<any>();
-  const { user, showAuthModal } = useAuth();
+  const { user } = useUser();
 
   useEffect(() => {
     if (debouncedQuery.trim()) {
@@ -61,11 +61,7 @@ const SearchScreen = () => {
   };
 
   const onMoviePress = (movie: any) => {
-    if (!user) {
-      showAuthModal(() => navigation.navigate('MovieDetails', { movieId: movie.id }));
-    } else {
-      navigation.navigate('MovieDetails', { movieId: movie.id });
-    }
+    navigation.navigate('MovieDetails', { movieId: movie.id });
   };
 
   return (
@@ -100,7 +96,7 @@ const SearchScreen = () => {
       ) : results.length > 0 ? (
         <FlatList
           data={results}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item?.id?.toString() || Math.random().toString()}
           numColumns={numColumns}
           renderItem={({ item }) => (
             <View style={styles.cardContainer}>

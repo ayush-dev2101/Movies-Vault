@@ -8,36 +8,15 @@ import SearchScreen from '../screens/SearchScreen';
 import WatchlistScreen from '../screens/WatchlistScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import { useAuth } from '../context/AuthContext';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const TabNavigator = () => {
-  let auth;
-  try {
-    auth = useAuth();
-  } catch (e) {
-    console.error("[MovieVault] TabNavigator Auth Error:", e);
-  }
-
-  const { user, showAuthModal } = auth || { user: null, showAuthModal: () => {} };
-
-  const handleProtectedTabPress = (e: any, targetScreen: string) => {
-    try {
-      if (!user) {
-        e.preventDefault();
-        showAuthModal();
-      }
-    } catch (error) {
-      console.error("[MovieVault] Tab Press Error:", error);
-    }
-  };
-
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName: any = 'film-outline'; // Default fallback icon
+          let iconName: any = 'film-outline';
 
           if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
@@ -71,21 +50,9 @@ const TabNavigator = () => {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Search" component={SearchScreen} />
-      <Tab.Screen 
-        name="Watchlist" 
-        component={WatchlistScreen} 
-        listeners={{ tabPress: (e) => handleProtectedTabPress(e, 'Watchlist') }}
-      />
-      <Tab.Screen 
-        name="Favorites" 
-        component={FavoritesScreen} 
-        listeners={{ tabPress: (e) => handleProtectedTabPress(e, 'Favorites') }}
-      />
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileScreen} 
-        listeners={{ tabPress: (e) => handleProtectedTabPress(e, 'Profile') }}
-      />
+      <Tab.Screen name="Watchlist" component={WatchlistScreen} />
+      <Tab.Screen name="Favorites" component={FavoritesScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 };

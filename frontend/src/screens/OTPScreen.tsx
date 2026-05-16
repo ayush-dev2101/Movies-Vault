@@ -13,42 +13,46 @@ import {
 } from 'react-native';
 import Colors from '../constants/Colors';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import API_URL from '../config/api';
+import { useSignUp } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 
 const OTPScreen = () => {
+  const { isLoaded, signUp, setActive } = useSignUp();
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const email = route.params?.email || '';
+  const type = route.params?.type || 'verification';
 
   const handleVerifyOTP = async () => {
+    if (!isLoaded) return;
+    
     if (!otp) {
       Alert.alert('Error', 'Please enter the OTP.');
+      return;
+    }
+
+    if (type === 'password_reset') {
+      navigation.navigate('ResetPassword', { email, otp });
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp, type: 'verification' }),
+      const completeSignUp = await signUp.attemptEmailAddressVerification({
+        code: otp,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert('Success', 'Email verified successfully! You can now log in.');
-        navigation.navigate('Login');
+      if (completeSignUp.status === 'complete') {
+        await setActive({ session: completeSignUp.createdSessionId });
       } else {
-        Alert.alert('Error', data.message || 'OTP verification failed.');
+        console.error(JSON.stringify(completeSignUp, null, 2));
       }
-    } catch (error: any) {
-      console.error('OTP Verification Error:', error);
-      Alert.alert('Error', 'Could not reach server. Please check your internet connection.');
+    } catch (err: any) {
+      console.error('OTP Verification Error:', err);
+      Alert.alert('Error', err.errors?.[0]?.message || 'OTP verification failed.');
     } finally {
       setLoading(false);
     }
@@ -56,15 +60,12 @@ const OTPScreen = () => {
 
   const handleResendOTP = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/auth/resend-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await response.json();
-      Alert.alert('Sent', data.message || 'New OTP sent to your email');
-    } catch (error) {
-      Alert.alert('Error', 'Could not resend OTP');
+      if (!isLoaded) return;
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      Alert.alert('Sent', 'A new verification code has been sent to your email.');
+    } catch (err: any) {
+      console.error('Resend OTP Error:', err);
+      Alert.alert('Error', err.errors?.[0]?.message || 'Could not resend OTP');
     }
   };
 

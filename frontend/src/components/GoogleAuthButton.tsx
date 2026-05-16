@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View, Alert, Platform } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '../constants/Colors';
-import { useAuth } from '../context/AuthContext';
-import {
-  GoogleSignin,
-  statusCodes,
-} from '@react-native-google-signin/google-signin';
-import API_URL from '../config/api';
+import * as WebBrowser from "expo-web-browser";
+import { useOAuth } from "@clerk/clerk-expo";
+import * as Linking from "expo-linking";
+
+WebBrowser.maybeCompleteAuthSession();
 
 interface GoogleAuthButtonProps {
   title?: string;
@@ -20,66 +19,27 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   onSuccess,
   style
 }) => {
-  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
+  const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
 
-  const handlePress = async () => {
-    setLoading(true);
-      if (Platform.OS === 'web') {
-        Alert.alert('Notice', 'Google Sign-In is currently only available on the mobile app. Please use the standard Login/Signup for the web demo.');
-        setLoading(false);
-        return;
-      }
-
+  const handlePress = useCallback(async () => {
     try {
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      await GoogleSignin.signOut(); // prevents stale cached session
-
-      const googleRes = await GoogleSignin.signIn();
-      const idToken = googleRes.data?.idToken;
-
-      if (!idToken) {
-        Alert.alert('Error', 'Google sign-in failed — no token received');
-        setLoading(false);
-        return;
-      }
-
-      const apiRes = await fetch(`${API_URL}/api/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
+      setLoading(true);
+      const { createdSessionId, setActive } = await startOAuthFlow({
+        redirectUrl: Linking.createURL("/dashboard", { scheme: "myapp" }),
       });
 
-      const data = await apiRes.json();
-
-      if (!apiRes.ok) {
-        Alert.alert('Error', data.message || 'Google login failed');
-        setLoading(false);
-        return;
+      if (createdSessionId) {
+        await setActive!({ session: createdSessionId });
+        if (onSuccess) onSuccess();
       }
-
-      await login({ name: data.user?.name || data.name, email: data.user?.email || data.email, avatar: data.user?.avatar || data.avatar, id: data.user?.id || data._id }, data.token);
-      if (onSuccess) onSuccess();
-
-    } catch (error: any) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        setLoading(false);
-        return;
-      }
-      if (error.code === statusCodes.IN_PROGRESS) {
-        setLoading(false);
-        return;
-      }
-      if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        Alert.alert('Error', 'Google Play Services not available on this device');
-        setLoading(false);
-        return;
-      }
-      Alert.alert('Google Sign-In Error', error.message);
+    } catch (err: any) {
+      console.error("[MovieVault] Google OAuth Error:", err);
+      Alert.alert('Google Sign-In Error', err.errors?.[0]?.message || 'Google login failed');
     } finally {
       setLoading(false);
     }
-  };
+  }, [startOAuthFlow, onSuccess]);
 
   return (
     <TouchableOpacity

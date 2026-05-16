@@ -8,7 +8,7 @@ export type RootStackParamList = {
 export type AuthStackParamList = {
   Login: undefined;
   Signup: undefined;
-  OTP: { email: string };
+  OTP: { email: string; type?: 'verification' | 'password_reset' };
   OTPVerification: { email: string; type: 'verification' | 'password_reset' };
   ForgotPassword: undefined;
   ResetPassword: { email: string; otp: string };
