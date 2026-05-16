@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Dimensions, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Colors from '../constants/Colors';
@@ -9,6 +9,7 @@ const { width } = Dimensions.get('window');
 
 const WatchlistScreen = ({ navigation }: any) => {
   const [movies, setMovies] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -18,12 +19,15 @@ const WatchlistScreen = ({ navigation }: any) => {
 
   const loadWatchlist = async () => {
     try {
+      setLoading(true);
       const stored = await AsyncStorage.getItem('watchlist');
-      if (stored) {
-        setMovies(JSON.parse(stored));
-      }
+      // Always update state (even to []) to clear stale data
+      setMovies(stored ? JSON.parse(stored) : []);
     } catch (error) {
       console.error('Failed to load watchlist', error);
+      setMovies([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -36,7 +40,7 @@ const WatchlistScreen = ({ navigation }: any) => {
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity 
       style={styles.card}
-      onPress={() => navigation.navigate('MovieDetails', { movie: item })}
+      onPress={() => navigation.navigate('MovieDetails', { movieId: item.id, movie: item })}
     >
       <Image 
         source={{ uri: `https://image.tmdb.org/t/p/w500${item.poster_path}` }} 
@@ -56,7 +60,11 @@ const WatchlistScreen = ({ navigation }: any) => {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>My Watchlist</Text>
-      {movies.length === 0 ? (
+      {loading ? (
+        <View style={styles.empty}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      ) : movies.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="bookmark-outline" size={80} color={Colors.surface} />
           <Text style={styles.emptyText}>Your watchlist is empty</Text>

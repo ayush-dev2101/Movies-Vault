@@ -23,34 +23,34 @@ const POSTER_HEIGHT = SCREEN_WIDTH * 1.5; // Aspect ratio 2:3
 const MovieDetailsScreen = () => {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const { movieId } = route.params || {};
-  
-  const [movie, setMovie] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  // Accept both { movieId } (from HomeScreen) and { movie } (from WatchlistScreen/FavoritesScreen)
+  const routeMovieId: number | undefined = route.params?.movieId;
+  const routeMovie: any = route.params?.movie;
+  const resolvedId: number = routeMovieId ?? routeMovie?.id;
+
+  const [movie, setMovie] = useState<any>(routeMovie ?? null);
+  const [loading, setLoading] = useState(!routeMovie); // skip loading if movie object passed
   const [isFavorite, setIsFavorite] = useState(false);
   const [inWatchlist, setInWatchlist] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (movieId) {
-      fetchDetails();
+    if (resolvedId) {
+      if (!routeMovie) fetchDetails(); // only fetch if no movie object given
       checkSavedStatus();
     }
-  }, [movieId]);
+  }, [resolvedId]);
 
   const checkSavedStatus = async () => {
     try {
-      const watchlist = await AsyncStorage.getItem('watchlist');
-      const favorites = await AsyncStorage.getItem('favorites');
-      
-      if (watchlist) {
-        const list = JSON.parse(watchlist);
-        setInWatchlist(list.some((m: any) => m.id === movieId));
-      }
-      
-      if (favorites) {
-        const list = JSON.parse(favorites);
-        setIsFavorite(list.some((m: any) => m.id === movieId));
-      }
+      const [watchlistRaw, favoritesRaw] = await Promise.all([
+        AsyncStorage.getItem('watchlist'),
+        AsyncStorage.getItem('favorites'),
+      ]);
+      const watchlist = watchlistRaw ? JSON.parse(watchlistRaw) : [];
+      const favorites = favoritesRaw ? JSON.parse(favoritesRaw) : [];
+      setInWatchlist(watchlist.some((m: any) => m.id === resolvedId));
+      setIsFavorite(favorites.some((m: any) => m.id === resolvedId));
     } catch (e) {
       console.error('Error checking saved status', e);
     }
@@ -58,10 +58,12 @@ const MovieDetailsScreen = () => {
 
   const fetchDetails = async () => {
     try {
-      const data = await getMovieDetails(movieId);
+      setError(false);
+      const data = await getMovieDetails(resolvedId);
       setMovie(data);
-    } catch (error) {
-      console.error('Error fetching movie details:', error);
+    } catch (err) {
+      console.error('Error fetching movie details:', err);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -103,10 +105,22 @@ const MovieDetailsScreen = () => {
     }
   };
 
-  if (loading || !movie) {
+  if (loading) {
     return (
       <View style={styles.loaderContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
+
+  if (error || !movie) {
+    return (
+      <View style={styles.loaderContainer}>
+        <Ionicons name="alert-circle-outline" size={60} color={Colors.primary} />
+        <Text style={{ color: Colors.text, fontSize: 18, marginTop: 16, fontWeight: '600' }}>Failed to load movie</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
+          <Text style={{ color: Colors.primary, fontSize: 16 }}>← Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }

@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TextInput, 
-  TouchableOpacity, 
-  SafeAreaView,
+import React, { useState, useRef, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert
+  Alert,
+  ScrollView,
+  StatusBar,
 } from 'react-native';
 import Colors from '../constants/Colors';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -22,14 +23,16 @@ const OTPScreen = () => {
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const email = route.params?.email || '';
-  const type = route.params?.type || 'verification';
+  const email: string = route.params?.email || '';
+  const type: string = route.params?.type || 'verification';
+  const inputRef = useRef<TextInput>(null);
 
-  const handleVerifyOTP = async () => {
+  // Stable handler — no inline functions to prevent re-render loops
+  const handleVerifyOTP = useCallback(async () => {
     if (!isLoaded) return;
-    
-    if (!otp) {
-      Alert.alert('Error', 'Please enter the OTP.');
+
+    if (!otp || otp.length < 6) {
+      Alert.alert('Error', 'Please enter the complete 6-digit code.');
       return;
     }
 
@@ -39,109 +42,126 @@ const OTPScreen = () => {
     }
 
     setLoading(true);
-
     try {
-      const completeSignUp = await signUp.attemptEmailAddressVerification({
-        code: otp,
-      });
-
+      const completeSignUp = await signUp.attemptEmailAddressVerification({ code: otp });
       if (completeSignUp.status === 'complete') {
         await setActive({ session: completeSignUp.createdSessionId });
       } else {
-        console.error(JSON.stringify(completeSignUp, null, 2));
+        Alert.alert('Error', 'Verification incomplete. Please try again.');
       }
     } catch (err: any) {
-      console.error('OTP Verification Error:', err);
-      Alert.alert('Error', err.errors?.[0]?.message || 'OTP verification failed.');
+      const msg = err?.errors?.[0]?.message || 'OTP verification failed.';
+      Alert.alert('Verification Failed', msg);
     } finally {
       setLoading(false);
     }
-  };
+  }, [isLoaded, otp, type, email, signUp, setActive, navigation]);
 
-  const handleResendOTP = async () => {
+  const handleResendOTP = useCallback(async () => {
+    if (!isLoaded) return;
     try {
-      if (!isLoaded) return;
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-      Alert.alert('Sent', 'A new verification code has been sent to your email.');
+      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+      Alert.alert('Sent', 'A new code has been sent to your email.');
     } catch (err: any) {
-      console.error('Resend OTP Error:', err);
-      Alert.alert('Error', err.errors?.[0]?.message || 'Could not resend OTP');
+      Alert.alert('Error', err?.errors?.[0]?.message || 'Could not resend code');
     }
-  };
+  }, [isLoaded, signUp]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.content}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    // StatusBar explicit set prevents layout jumps
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // On Android, 'height' behavior causes vertical thrashing — use undefined + ScrollView instead
       >
-        <View style={styles.headerContainer}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="mail-unread-outline" size={32} color={Colors.white} />
-          </View>
-          <Text style={styles.title}>Verify Email</Text>
-          <Text style={styles.subtitle}>Enter the code sent to {email}</Text>
-        </View>
-
-        <View style={styles.formCard}>
-          <View style={styles.inputContainer}>
-            <Ionicons name="keypad-outline" size={20} color={Colors.textSecondary} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Enter 6-digit OTP"
-              placeholderTextColor={Colors.textSecondary}
-              value={otp}
-              onChangeText={setOtp}
-              keyboardType="number-pad"
-              maxLength={6}
-            />
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          {/* Header */}
+          <View style={styles.headerContainer}>
+            <View style={styles.iconContainer}>
+              <Ionicons name="mail-unread-outline" size={32} color={Colors.white} />
+            </View>
+            <Text style={styles.title}>Verify Email</Text>
+            <Text style={styles.subtitle}>Enter the code sent to{'\n'}{email}</Text>
           </View>
 
-          <TouchableOpacity 
-            style={styles.button}
-            onPress={handleVerifyOTP}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <Text style={styles.buttonText}>Verify OTP</Text>
-            )}
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={{ marginTop: 20, alignItems: 'center' }}
-            onPress={handleResendOTP}
-          >
-            <Text style={{ color: Colors.textSecondary, fontWeight: '600' }}>Didn't receive a code? <Text style={{ color: Colors.primary }}>Resend OTP</Text></Text>
-          </TouchableOpacity>
+          {/* Form */}
+          <View style={styles.formCard}>
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={() => inputRef.current?.focus()}
+              style={styles.inputContainer}
+            >
+              <Ionicons name="keypad-outline" size={20} color={Colors.textSecondary} style={styles.inputIcon} />
+              <TextInput
+                ref={inputRef}
+                style={styles.input}
+                placeholder="Enter 6-digit code"
+                placeholderTextColor={Colors.textSecondary}
+                value={otp}
+                onChangeText={setOtp}
+                keyboardType="number-pad"
+                maxLength={6}
+                returnKeyType="done"
+                onSubmitEditing={handleVerifyOTP}
+                autoFocus={false}
+              />
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={{ marginTop: 20, alignItems: 'center' }}
-            onPress={() => navigation.navigate('Login')}
-          >
-            <Text style={{ color: Colors.primary, fontWeight: '600' }}>Back to Login</Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleVerifyOTP}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              {loading ? (
+                <ActivityIndicator color={Colors.white} />
+              ) : (
+                <Text style={styles.buttonText}>Verify Code</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.resendBtn} onPress={handleResendOTP}>
+              <Text style={styles.resendText}>
+                Didn't receive a code?{' '}
+                <Text style={styles.resendLink}>Resend</Text>
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={16} color={Colors.primary} />
+              <Text style={styles.backText}>Back to Login</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
     backgroundColor: Colors.background,
   },
-  content: {
+  flex: {
     flex: 1,
-    paddingHorizontal: 25,
+  },
+  scroll: {
+    flexGrow: 1,
     justifyContent: 'center',
+    paddingHorizontal: 25,
+    paddingVertical: 40,
   },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 32,
   },
   iconContainer: {
     width: 70,
@@ -150,46 +170,42 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 15,
+    marginBottom: 16,
+    elevation: 8,
     shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 10 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
-    shadowRadius: 15,
-    elevation: 10,
+    shadowRadius: 12,
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
     color: Colors.text,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
     color: Colors.textSecondary,
     fontWeight: '500',
-    textAlign: 'center'
+    textAlign: 'center',
+    lineHeight: 22,
   },
   formCard: {
-    backgroundColor: Colors.white,
-    padding: 25,
+    backgroundColor: Colors.surface,
+    padding: 24,
     borderRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 15 },
-    shadowOpacity: 0.05,
-    shadowRadius: 30,
-    elevation: 8,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.02)',
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.background,
     borderRadius: 16,
-    marginBottom: 16,
+    marginBottom: 20,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   inputIcon: {
     marginRight: 12,
@@ -197,30 +213,59 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     paddingVertical: 18,
-    fontSize: 16,
+    fontSize: 20,
     color: Colors.text,
-    fontWeight: '500',
-    letterSpacing: 2,
-    textAlign: 'center'
+    fontWeight: '600',
+    letterSpacing: 6,
+    textAlign: 'center',
   },
   button: {
     backgroundColor: Colors.primary,
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
     elevation: 6,
-    marginTop: 8,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   buttonText: {
     color: Colors.white,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
     letterSpacing: 0.5,
-  }
+  },
+  resendBtn: {
+    marginTop: 24,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  resendText: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  resendLink: {
+    color: Colors.primary,
+    fontWeight: '700',
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  backText: {
+    color: Colors.primary,
+    fontWeight: '600',
+    fontSize: 14,
+  },
 });
 
 export default OTPScreen;

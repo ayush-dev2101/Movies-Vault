@@ -26,26 +26,32 @@ const LoginScreen = () => {
 
   const handleLogin = async () => {
     if (!isLoaded) return;
-    
-    if (!email || !password) {
+
+    if (!email.trim() || !password) {
       Alert.alert('Error', 'Please fill out all fields.');
       return;
     }
 
     setLoading(true);
 
+    // 15-second timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      Alert.alert('Timeout', 'Login is taking too long. Please try again.');
+    }, 15000);
+
     try {
       const completeSignIn = await signIn.create({
-        identifier: email,
+        identifier: email.trim(),
         password,
       });
-
-      // This indicates the user is signed in
       await setActive({ session: completeSignIn.createdSessionId });
     } catch (err: any) {
-      console.error('Login Error:', err);
-      Alert.alert('Login Failed', err.errors?.[0]?.message || 'Invalid credentials');
+      console.error('[MovieVault] Login Error:', err);
+      const message = err?.errors?.[0]?.message || 'Invalid credentials. Please try again.';
+      Alert.alert('Login Failed', message);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };
@@ -169,16 +175,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   formCard: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,  // Fixed: was Colors.white causing invisible inputs
     padding: 25,
     borderRadius: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 15 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.3,
     shadowRadius: 30,
     elevation: 8,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.02)',
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   inputContainer: {
     flexDirection: 'row',
