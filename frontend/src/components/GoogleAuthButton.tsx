@@ -23,20 +23,40 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
 
   const handlePress = useCallback(async () => {
+    // 1. Start loading
+    setLoading(true);
+
+    // 2. Set a safety timeout (15 seconds)
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      Alert.alert('Sign-In Timeout', 'Google sign-in is taking too long. Please try again or check your internet.');
+    }, 15000);
+
     try {
-      setLoading(true);
+      console.log('[MovieVault] Starting Google OAuth flow...');
+      
       const { createdSessionId, setActive } = await startOAuthFlow({
         redirectUrl: Linking.createURL('/dashboard', { scheme: 'movievault' }),
       });
 
       if (createdSessionId) {
+        console.log('[MovieVault] Google Auth Successful, session created');
         await setActive!({ session: createdSessionId });
         if (onSuccess) onSuccess();
+      } else {
+        console.warn('[MovieVault] Google Auth cancelled or no session created');
+        setLoading(false);
       }
     } catch (err: any) {
       console.error("[MovieVault] Google OAuth Error:", err);
-      Alert.alert('Google Sign-In Error', err.errors?.[0]?.message || 'Google login failed');
+      const errorMessage = err.errors?.[0]?.message || err.message || 'Google login failed';
+      
+      // Don't show alert if it was a user cancellation
+      if (!errorMessage.includes('cancel')) {
+        Alert.alert('Google Sign-In Error', errorMessage);
+      }
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   }, [startOAuthFlow, onSuccess]);
@@ -68,7 +88,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.gray[200],
+    borderColor: 'rgba(255,255,255,0.1)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,

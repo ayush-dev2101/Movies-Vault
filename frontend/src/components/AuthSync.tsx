@@ -7,44 +7,42 @@ import api from '../services/api';
  * AuthSync Component
  * 
  * Handles:
- * 1. Syncing Clerk tokens with the Axios instance.
+ * 1. Syncing Clerk User ID with the Axios instance.
  * 2. Ensuring the user exists in the backend DB (User Sync).
  */
 const AuthSync = () => {
-  const { getToken, isSignedIn } = useAuth();
+  const { isSignedIn } = useAuth();
   const { user } = useUser();
 
   useEffect(() => {
-    const syncToken = async () => {
-      if (isSignedIn) {
+    const syncUserSession = async () => {
+      if (isSignedIn && user) {
         try {
-          const token = await getToken();
-          setAuthToken(token);
+          // Use the raw Clerk User ID as the token for our backend lookup
+          // This matches the backend's User.findOne({ clerkId: token }) logic
+          setAuthToken(user.id);
           
-          // Optional: Sync user with backend if needed
-          if (user) {
-            await api.post('/movies/sync-user', {
-              clerkId: user.id,
-              email: user.primaryEmailAddress?.emailAddress,
-              name: user.fullName || 'Movie Lover',
-              avatar: user.imageUrl,
-            }).catch(e => console.warn('[MovieVault] User sync failed:', e.message));
-          }
-        } catch (error) {
-          console.error('[MovieVault] Token sync error:', error);
-          setAuthToken(null);
+          console.log('[MovieVault] Syncing session for user:', user.id);
+
+          // Sync user details with backend database
+          await api.post('/movies/sync-user', {
+            clerkId: user.id,
+            email: user.primaryEmailAddress?.emailAddress,
+            name: user.fullName || 'Movie Lover',
+            avatar: user.imageUrl,
+          });
+
+          console.log('[MovieVault] Backend sync successful');
+        } catch (error: any) {
+          console.error('[MovieVault] Sync Error:', error.response?.data?.message || error.message);
         }
-      } else {
+      } else if (!isSignedIn) {
         setAuthToken(null);
       }
     };
 
-    syncToken();
-    
-    // Refresh token every 50 seconds (Clerk tokens expire quickly)
-    const interval = setInterval(syncToken, 50000);
-    return () => clearInterval(interval);
-  }, [isSignedIn, user, getToken]);
+    syncUserSession();
+  }, [isSignedIn, user]);
 
   return null;
 };
