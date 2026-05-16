@@ -13,8 +13,8 @@
     "env:check": "node scripts/validate-env.js",
     "doctor": "npx expo-doctor",
     "validate": "npm run typecheck && npm run env:check && npm run doctor",
-    "android:debug": "npx expo prebuild --platform android && cd android && ./gradlew assembleDebug",
-    "android:release": "npx expo prebuild --platform android && cd android && ./gradlew assembleRelease",
+    "android:debug": "npx expo prebuild --platform android && cd android && gradlew assembleDebug",
+    "android:release": "npx expo prebuild --platform android && cd android && gradlew assembleRelease",
     "android:install": "npx expo run:android",
     "clean": "npx rimraf .expo node_modules/.cache android ios && npx expo start --clear",
     "prebuild:clean": "npx expo prebuild --clean --platform android"
