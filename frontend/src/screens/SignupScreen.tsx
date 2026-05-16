@@ -27,33 +27,32 @@ const SignupScreen = () => {
 
   const handleSignup = async () => {
     if (!isLoaded) return;
-    
+
+    // Validate BEFORE setting loading (prevents stuck spinner)
+    if (!name.trim() || !email.trim() || !password) {
+      Alert.alert('Error', 'All fields are required');
+      return;
+    }
+
+    setLoading(true);
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      Alert.alert('Timeout', 'Signup is taking too long. Please try again.');
+    }, 15000);
+
     try {
-      setLoading(true);
-
-      if (!name || !email || !password) {
-        Alert.alert('Error', 'All fields are required');
-        return;
-      }
-
-      // Start the signup process
       await signUp.create({
-        firstName: name,
-        emailAddress: email,
+        firstName: name.trim(),
+        emailAddress: email.trim(),
         password,
       });
-
-      // Send the verification code
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-
-      // Navigate to OTP screen on success
-      Alert.alert('Success', 'Check your email for the verification code.');
-      navigation.navigate('OTP', { email });
-
+      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+      navigation.navigate('OTP', { email: email.trim() });
     } catch (err: any) {
-      console.error('Signup error:', err);
-      Alert.alert('Signup Failed', err.errors?.[0]?.message || 'Something went wrong');
+      console.error('[MovieVault] Signup error:', err);
+      Alert.alert('Signup Failed', err?.errors?.[0]?.message || 'Something went wrong');
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };
@@ -61,7 +60,7 @@ const SignupScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.content}
       >
         <View style={styles.headerContainer}>
@@ -181,16 +180,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   formCard: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,  // Fixed: was Colors.white
     padding: 25,
     borderRadius: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 15 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.3,
     shadowRadius: 30,
     elevation: 8,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.02)',
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   inputContainer: {
     flexDirection: 'row',

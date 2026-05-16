@@ -26,7 +26,7 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
     try {
       setLoading(true);
       const { createdSessionId, setActive } = await startOAuthFlow({
-        redirectUrl: Linking.createURL("/dashboard", { scheme: "myapp" }),
+        redirectUrl: Linking.createURL('/dashboard', { scheme: 'movievault' }),
       });
 
       if (createdSessionId) {
