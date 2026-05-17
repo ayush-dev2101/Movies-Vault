@@ -6,10 +6,11 @@ const User = require('../models/User');
  * @access  Private (Clerk ID required in body)
  */
 exports.syncUser = async (req, res) => {
-  const { clerkId, email, name, avatar } = req.body;
+  const clerkId = req.clerkId;
+  const { email, name, avatar } = req.body;
 
   if (!clerkId || !email) {
-    return res.status(400).json({ message: 'Clerk ID and email are required' });
+    return res.status(400).json({ message: 'Secure Clerk ID (from JWT) and email are required' });
   }
 
   try {

@@ -11,30 +11,35 @@ import api from '../services/api';
  * 2. Ensuring the user exists in the backend DB (User Sync).
  */
 const AuthSync = () => {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, getToken } = useAuth();
   const { user } = useUser();
 
   useEffect(() => {
     const syncUserSession = async () => {
       if (isSignedIn && user) {
         try {
-          // Use the raw Clerk User ID as the token for our backend lookup
-          // This matches the backend's User.findOne({ clerkId: token }) logic
-          setAuthToken(user.id);
-          
-          console.log('[MovieVault] Syncing session for user:', user.id);
+          // Retrieve actual cryptographically signed Clerk session JWT
+          const token = await getToken();
+          if (!token) {
+            console.error('[MovieVault] Failed to get valid Clerk JWT token');
+            return;
+          }
+
+          setAuthToken(token);
+          console.log('[MovieVault] Successfully fetched and set Clerk JWT token.');
 
           // Sync user details with backend database
+          // Note: Since /sync-user is now secured behind the auth middleware,
+          // the backend will extract the authenticated clerkId directly from the verified JWT.
           await api.post('/movies/sync-user', {
-            clerkId: user.id,
             email: user.primaryEmailAddress?.emailAddress,
             name: user.fullName || 'Movie Lover',
             avatar: user.imageUrl,
           });
 
-          console.log('[MovieVault] Backend sync successful');
+          console.log('[MovieVault] Secure backend user sync successful');
         } catch (error: any) {
-          console.error('[MovieVault] Sync Error:', error.response?.data?.message || error.message);
+          console.error('[MovieVault] Secure Sync Error:', error.response?.data?.message || error.message);
         }
       } else if (!isSignedIn) {
         setAuthToken(null);

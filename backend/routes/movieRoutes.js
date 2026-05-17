@@ -11,9 +11,9 @@ const {
 const { syncUser } = require('../controllers/userSyncController');
 const { protect } = require('../middleware/auth');
 
-router.post('/sync-user', syncUser);
-
 router.use(protect);
+
+router.post('/sync-user', syncUser);
 
 router.get('/favorites', getFavorites);
 router.post('/favorites/add', addToFavorites);
