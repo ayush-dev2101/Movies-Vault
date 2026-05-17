@@ -40,12 +40,16 @@ exports.syncUser = async (req, res) => {
       name,
       avatar,
       isVerified: true,
-      authProvider: 'google' // Defaulting to google if it's social, or just clerk
+      authProvider: 'clerk'
     });
 
+    console.log(`[Backend-Trace] Successfully created and synchronized new Clerk User: ${clerkId} (${email})`);
     res.status(201).json(user);
   } catch (error) {
-    console.error('[Backend] Sync Error:', error.message);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error('[Backend-Trace] /sync-user - Internal Database Sync Error Stack:', error.stack);
+    res.status(500).json({ 
+      message: 'Internal Server Error during database user sync', 
+      error: error.message 
+    });
   }
 };

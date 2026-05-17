@@ -17,7 +17,9 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: function() {
-      return !this.googleId; // Password is required if googleId is not present
+      // Password is only required for local email/password login.
+      // If the user has googleId or clerkId, a password is not required.
+      return !this.googleId && !this.clerkId;
     }
   },
   googleId: {
@@ -40,7 +42,7 @@ const userSchema = new mongoose.Schema({
   },
   authProvider: {
     type: String,
-    enum: ['local', 'google'],
+    enum: ['local', 'google', 'clerk'],
     default: 'local'
   }
 }, {
