@@ -42,6 +42,9 @@ api.interceptors.response.use(
   (error) => {
     const status = error.response ? error.response.status : null;
     console.log(`[Frontend-Trace] Response Error from ${error.config?.url}: Status ${status}`);
+    if (error.response?.data) {
+      console.log(`[Frontend-Trace] Response Details:`, JSON.stringify(error.response.data));
+    }
 
     if (status === 401) {
       console.warn('[MovieVault] Unauthorized request - checking session...');

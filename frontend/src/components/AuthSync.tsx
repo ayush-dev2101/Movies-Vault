@@ -21,12 +21,17 @@ const AuthSync = () => {
           // Retrieve actual cryptographically signed Clerk session JWT
           const token = await getToken();
           if (!token) {
-            console.error('[MovieVault] Failed to get valid Clerk JWT token');
+            console.error('[MovieVault] Failed to get valid Clerk JWT token (returned null/empty)');
             return;
           }
 
+          console.log('[MovieVault] [AuthSync-Trace] Token retrieved successfully!');
+          console.log('[MovieVault] [AuthSync-Trace] Token Length:', token.length);
+          console.log('[MovieVault] [AuthSync-Trace] Token Prefix:', token.slice(0, 20) + '...');
+          console.log('[MovieVault] [AuthSync-Trace] Number of segments:', token.split('.').length);
+
           setAuthToken(token);
-          console.log('[MovieVault] Successfully fetched and set Clerk JWT token.');
+          console.log('[MovieVault] Successfully set Clerk JWT token in Axios.');
 
           // Sync user details with backend database
           // Note: Since /sync-user is now secured behind the auth middleware,

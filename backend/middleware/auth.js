@@ -43,38 +43,89 @@ const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1];
 
+      console.log(`[Backend-Trace] Auth Middleware - Received Token (Length: ${token.length})`);
+
       // 1. Decode token to extract issuer (iss) and key ID (kid)
       const decodedToken = jwt.decode(token, { complete: true });
       if (!decodedToken || !decodedToken.header || !decodedToken.payload) {
         console.error('[Backend-Trace] Auth Middleware - Invalid or malformed JWT structure');
-        return res.status(401).json({ message: 'Not authorized, malformed token' });
+        return res.status(401).json({ 
+          message: 'Not authorized, malformed token structure', 
+          error: 'Failed to decode JWT header/payload segments' 
+        });
       }
+
+      console.log('[Backend-Trace] Decoded JWT Header:', JSON.stringify(decodedToken.header));
+      console.log('[Backend-Trace] Decoded JWT Payload (truncated sub/iss):', JSON.stringify({
+        iss: decodedToken.payload.iss,
+        sub: decodedToken.payload.sub,
+        aud: decodedToken.payload.aud,
+        exp: decodedToken.payload.exp,
+        nbf: decodedToken.payload.nbf
+      }));
 
       const { kid } = decodedToken.header;
       const { iss } = decodedToken.payload;
 
-      if (!iss || !iss.includes('clerk')) {
+      if (!iss) {
+        console.error('[Backend-Trace] Auth Middleware - Missing issuer (iss) claim');
+        return res.status(401).json({ 
+          message: 'Not authorized, token is missing the issuer (iss) claim',
+          error: 'Missing iss claim' 
+        });
+      }
+
+      if (!iss.includes('clerk') && !iss.includes('accounts.dev')) {
         console.error(`[Backend-Trace] Auth Middleware - Untrusted Issuer: ${iss}`);
-        return res.status(401).json({ message: 'Not authorized, untrusted token issuer' });
+        return res.status(401).json({ 
+          message: `Not authorized, untrusted token issuer: ${iss}`, 
+          error: 'Issuer validation failed' 
+        });
       }
 
       // 2. Fetch the JWKS keys using the robust, cached fetcher
-      const keys = await getJwksKeys(iss);
+      let keys;
+      try {
+        keys = await getJwksKeys(iss);
+      } catch (fetchError) {
+        console.error(`[Backend-Trace] Auth Middleware - Failed to fetch JWKS keys from ${iss}:`, fetchError.message);
+        return res.status(401).json({ 
+          message: `Not authorized, failed to retrieve JWKS keys from ${iss}`, 
+          error: fetchError.message 
+        });
+      }
+
       const jwk = keys.find(key => key.kid === kid);
 
       if (!jwk) {
         console.error(`[Backend-Trace] Auth Middleware - Matching JWK with kid ${kid} not found in JWKS`);
-        return res.status(401).json({ message: 'Not authorized, signing key not found' });
+        return res.status(401).json({ 
+          message: `Not authorized, signing key matching kid '${kid}' not found in JWKS keys`, 
+          error: 'Key ID mismatch' 
+        });
       }
 
       // 3. Convert JWK to native Public KeyObject using Node's crypto
-      const publicKey = crypto.createPublicKey({ format: 'jwk', key: jwk });
+      let publicKey;
+      try {
+        publicKey = crypto.createPublicKey({ format: 'jwk', key: jwk });
+      } catch (cryptoError) {
+        console.error('[Backend-Trace] Auth Middleware - Native Crypto JWK key conversion failed:', cryptoError.message);
+        return res.status(401).json({ 
+          message: 'Not authorized, JWK conversion error', 
+          error: cryptoError.message 
+        });
+      }
 
       // 4. Cryptographically verify signature, audience, and expiration
       jwt.verify(token, publicKey, { algorithms: ['RS256'] }, async (err, verified) => {
         if (err) {
           console.error(`[Backend-Trace] Auth Middleware - Signature verification failed: ${err.message}`);
-          return res.status(401).json({ message: 'Not authorized, token verification failed', error: err.message });
+          return res.status(401).json({ 
+            message: 'Not authorized, cryptographic token verification failed', 
+            error: err.message,
+            reason: err.name // e.g. TokenExpiredError, JsonWebTokenError
+          });
         }
 
         const clerkId = verified.sub;
@@ -93,7 +144,10 @@ const protect = async (req, res, next) => {
             return next();
           }
 
-          return res.status(401).json({ message: 'User not found in database. Please sync.' });
+          return res.status(401).json({ 
+            message: 'User not found in database. Please sync.',
+            error: 'User unsynced' 
+          });
         }
 
         req.user = user;
