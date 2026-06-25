@@ -53,8 +53,8 @@ const SearchScreen = () => {
     try {
       const data = await searchMovies(searchQuery);
       setResults(data);
-    } catch (error) {
-      console.error('Search error:', error);
+    } catch (error: any) {
+      console.error('[MovieVault] Search error:', error.message || error);
     } finally {
       setLoading(false);
     }

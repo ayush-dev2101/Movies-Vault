@@ -38,9 +38,23 @@ const HomeScreen = () => {
 
       const [trendingRes, popularRes, topRatedRes] = results;
 
-      if (trendingRes.status === 'fulfilled') setTrending(trendingRes.value || []);
-      if (popularRes.status === 'fulfilled') setPopular(popularRes.value || []);
-      if (topRatedRes.status === 'fulfilled') setTopRated(topRatedRes.value || []);
+      if (trendingRes.status === 'fulfilled') {
+        setTrending(trendingRes.value || []);
+      } else {
+        console.error('[MovieVault] Trending Fetch Failed:', trendingRes.reason);
+      }
+
+      if (popularRes.status === 'fulfilled') {
+        setPopular(popularRes.value || []);
+      } else {
+        console.error('[MovieVault] Popular Fetch Failed:', popularRes.reason);
+      }
+
+      if (topRatedRes.status === 'fulfilled') {
+        setTopRated(topRatedRes.value || []);
+      } else {
+        console.error('[MovieVault] Top Rated Fetch Failed:', topRatedRes.reason);
+      }
       
     } catch (error) {
       console.error('[MovieVault] Critical Fetch Error:', error);

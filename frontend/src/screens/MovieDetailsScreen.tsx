@@ -61,8 +61,8 @@ const MovieDetailsScreen = () => {
       setError(false);
       const data = await getMovieDetails(resolvedId);
       setMovie(data);
-    } catch (err) {
-      console.error('Error fetching movie details:', err);
+    } catch (err: any) {
+      console.error('[MovieVault] Error fetching movie details:', err.message || err);
       setError(true);
     } finally {
       setLoading(false);
