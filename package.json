@@ -1,8 +1,13 @@
 {
   "name": "movie-vault-root",
   "version": "1.0.0",
+  "description": "MovieVault monorepo root — backend orchestrator only. Expo frontend lives in ./frontend/",
   "scripts": {
     "start": "cd backend && node index.js",
-    "install": "cd backend && npm install"
-  }
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "start:backend": "cd backend && node index.js",
+    "start:frontend": "cd frontend && npx expo start --clear"
+  },
+  "private": true
 }
