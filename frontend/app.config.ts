@@ -58,17 +58,18 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   // ── Plugins ───────────────────────────────────────────
   plugins: [
-    'expo-secure-store',
-    'expo-font',
-    [
-      'expo-splash-screen',
-      {
-        backgroundColor: '#080808',
-        image: './assets/splash-icon.png',
-        imageWidth: 200,
-      },
-    ],
+  "expo-asset",
+  "expo-secure-store",
+  "expo-font",
+  [
+    "expo-splash-screen",
+    {
+      backgroundColor: "#080808",
+      image: "./assets/splash-icon.png",
+      imageWidth: 200,
+    },
   ],
+],
 
   assetBundlePatterns: ['**/*'],
 
