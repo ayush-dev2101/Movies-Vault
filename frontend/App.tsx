@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import AppNavigator from "./src/navigation/AppNavigator";
-// import { StatusBar } from 'expo-status-bar';
-import { StatusBar, View, ActivityIndicator, Text } from "react-native";
+import { StatusBar } from 'expo-status-bar';
+import { View, ActivityIndicator, Text } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ClerkProvider } from "@clerk/clerk-expo";
 import { tokenCache } from "./src/config/clerk";
@@ -124,7 +124,7 @@ export default function App() {
               }
             >
               <AppNavigator />
-              <StatusBar barStyle="light-content" backgroundColor="#080808" />
+              <StatusBar style="light" backgroundColor="#080808" />
             </NavigationContainer>
           </SafeAreaProvider>
         </GestureHandlerRootView>

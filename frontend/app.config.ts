@@ -11,8 +11,7 @@ const CLERK_KEY =
   'pk_test_c2hhcnAtY293LTk2LmNsZXJrLmFjY291bnRzLmRldiQ';
 
 const API_URL =
-  env['EXPO_PUBLIC_API_URL'] ||
-  'https://movies-vault-production.up.railway.app';
+  env['EXPO_PUBLIC_API_URL'] || 'https://movies-vault-production.up.railway.app'
 
 const TMDB_KEY =
   env['EXPO_PUBLIC_TMDB_API_KEY'] ||
@@ -44,6 +43,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   // ── Android ───────────────────────────────────────────
   android: {
+     jsEngine: 'hermes',
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#080808',

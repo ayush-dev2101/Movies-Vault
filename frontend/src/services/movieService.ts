@@ -15,62 +15,134 @@ const CACHE_KEYS = {
   FAVORITES: '@movievault_favorites',
 };
 
+// Helper: Update the local cache for a given key
+const updateCache = async (key: string, data: any[]) => {
+  try {
+    await AsyncStorage.setItem(key, JSON.stringify(data));
+  } catch (e) {
+    console.warn('[MovieVault] Cache write failed:', e);
+  }
+};
+
+// Helper: Read from local cache
+const readCache = async (key: string): Promise<any[] | null> => {
+  try {
+    const cached = await AsyncStorage.getItem(key);
+    return cached ? JSON.parse(cached) : null;
+  } catch (e) {
+    console.warn('[MovieVault] Cache read failed:', e);
+    return null;
+  }
+};
+
 export const movieService = {
-  // Watchlist
-  getWatchlist: async () => {
+  // ────────────────────── Watchlist ──────────────────────
+
+  getWatchlist: async (): Promise<MovieData[]> => {
     try {
-      // 1. Try fetching from backend first
       const response = await api.get('/movies/watchlist');
-      // 2. If successful, cache it
-      await AsyncStorage.setItem(CACHE_KEYS.WATCHLIST, JSON.stringify(response.data));
+      const data: MovieData[] = Array.isArray(response.data) ? response.data : [];
+      await updateCache(CACHE_KEYS.WATCHLIST, data);
+      return data;
+    } catch (error: any) {
+      const status = error.response?.status;
+      console.warn(`[MovieVault] Watchlist fetch failed (${status}), checking cache...`);
+      const cached = await readCache(CACHE_KEYS.WATCHLIST);
+      if (cached) return cached;
+      // Re-throw only if it's not a 401 (auth issue is expected on first load)
+      if (status !== 401) throw error;
+      return [];
+    }
+  },
+
+  addToWatchlist: async (movie: MovieData): Promise<any> => {
+    try {
+      const response = await api.post('/movies/watchlist/add', movie);
+      // Optimistically update cache
+      const cached = await readCache(CACHE_KEYS.WATCHLIST);
+      if (cached) {
+        const exists = cached.some((m) => m.movieId === movie.movieId);
+        if (!exists) {
+          await updateCache(CACHE_KEYS.WATCHLIST, [...cached, movie]);
+        }
+      }
       return response.data;
     } catch (error: any) {
-      // 3. If network fails or server sleeps, fallback to cache
-      console.warn('[MovieVault] Backend fetch failed, loading Watchlist from cache');
-      const cached = await AsyncStorage.getItem(CACHE_KEYS.WATCHLIST);
-      if (cached) return JSON.parse(cached);
+      console.error('[MovieVault] addToWatchlist failed:', error.message);
       throw error;
     }
   },
 
-  addToWatchlist: async (movie: MovieData) => {
-    const response = await api.post('/movies/watchlist/add', movie);
-    // Optimistically update cache (optional but helpful)
-    return response.data;
+  removeFromWatchlist: async (movieId: number): Promise<any> => {
+    try {
+      const response = await api.delete(`/movies/watchlist/remove/${movieId}`);
+      // Update cache
+      const cached = await readCache(CACHE_KEYS.WATCHLIST);
+      if (cached) {
+        await updateCache(CACHE_KEYS.WATCHLIST, cached.filter((m) => m.movieId !== movieId));
+      }
+      return response.data;
+    } catch (error: any) {
+      console.error('[MovieVault] removeFromWatchlist failed:', error.message);
+      throw error;
+    }
   },
 
-  removeFromWatchlist: async (movieId: number) => {
-    const response = await api.delete(`/movies/watchlist/remove/${movieId}`);
-    return response.data;
-  },
+  // ────────────────────── Favorites ──────────────────────
 
-  // Favorites
-  getFavorites: async () => {
+  getFavorites: async (): Promise<MovieData[]> => {
     try {
       const response = await api.get('/movies/favorites');
-      await AsyncStorage.setItem(CACHE_KEYS.FAVORITES, JSON.stringify(response.data));
+      const data: MovieData[] = Array.isArray(response.data) ? response.data : [];
+      await updateCache(CACHE_KEYS.FAVORITES, data);
+      return data;
+    } catch (error: any) {
+      const status = error.response?.status;
+      console.warn(`[MovieVault] Favorites fetch failed (${status}), checking cache...`);
+      const cached = await readCache(CACHE_KEYS.FAVORITES);
+      if (cached) return cached;
+      if (status !== 401) throw error;
+      return [];
+    }
+  },
+
+  addToFavorites: async (movie: MovieData): Promise<any> => {
+    try {
+      const response = await api.post('/movies/favorites/add', movie);
+      // Optimistically update cache
+      const cached = await readCache(CACHE_KEYS.FAVORITES);
+      if (cached) {
+        const exists = cached.some((m) => m.movieId === movie.movieId);
+        if (!exists) {
+          await updateCache(CACHE_KEYS.FAVORITES, [...cached, movie]);
+        }
+      }
       return response.data;
     } catch (error: any) {
-      console.warn('[MovieVault] Backend fetch failed, loading Favorites from cache');
-      const cached = await AsyncStorage.getItem(CACHE_KEYS.FAVORITES);
-      if (cached) return JSON.parse(cached);
+      console.error('[MovieVault] addToFavorites failed:', error.message);
       throw error;
     }
   },
 
-  addToFavorites: async (movie: MovieData) => {
-    const response = await api.post('/movies/favorites/add', movie);
-    return response.data;
+  removeFromFavorites: async (movieId: number): Promise<any> => {
+    try {
+      const response = await api.delete(`/movies/favorites/remove/${movieId}`);
+      // Update cache
+      const cached = await readCache(CACHE_KEYS.FAVORITES);
+      if (cached) {
+        await updateCache(CACHE_KEYS.FAVORITES, cached.filter((m) => m.movieId !== movieId));
+      }
+      return response.data;
+    } catch (error: any) {
+      console.error('[MovieVault] removeFromFavorites failed:', error.message);
+      throw error;
+    }
   },
 
-  removeFromFavorites: async (movieId: number) => {
-    const response = await api.delete(`/movies/favorites/remove/${movieId}`);
-    return response.data;
-  },
+  // ────────────────────── Health Check ──────────────────────
 
-  // Health Check
-  checkHealth: async () => {
+  checkHealth: async (): Promise<any> => {
     const response = await api.get('/');
     return response.data;
-  }
+  },
 };

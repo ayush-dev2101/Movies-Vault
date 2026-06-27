@@ -10,8 +10,8 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
-  StatusBar,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import Colors from '../constants/Colors';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSignUp } from '@clerk/clerk-expo';
@@ -70,7 +70,7 @@ const OTPScreen = () => {
   return (
     // StatusBar explicit set prevents layout jumps
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar style="light" backgroundColor={Colors.background} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

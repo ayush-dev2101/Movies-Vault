@@ -9,6 +9,8 @@ const api = axios.create({
   },
 });
 
+console.log("API URL:", ENV.API_URL);
+
 // Request Interceptor: Inject Clerk Token
 // Note: We will call a setter function from the App/Auth provider to update the token
 let authToken: string | null = null;
@@ -37,6 +39,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     console.log(`[Frontend-Trace] Response ${response.status} from ${response.config.url}`);
+    console.log("BACKEND RESPONSE:", response.data);
     return response;
   },
   (error) => {
