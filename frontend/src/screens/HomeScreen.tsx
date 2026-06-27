@@ -123,15 +123,11 @@ const HomeScreen = () => {
   };
 
   const renderMovieSection = (title: string, data: any[]) => {
-    if (data.length === 0) return null;
+    if (!Array.isArray(data) || data.length === 0) return null;
+
     return (
       <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>
-          {title} ({data.length})
-        </Text>
-        <Text style={{ color: "red", marginLeft: 20 }}>
-          First movie: {data[0]?.title}
-        </Text>
+        <Text style={styles.sectionTitle}>{title}</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -139,23 +135,12 @@ const HomeScreen = () => {
         >
           {data.map((item) =>
             item ? (
-              <View
-                key={item.id?.toString()}
-                style={{
-                  width: 130,
-                  height: 200,
-                  backgroundColor: "red",
-                  marginRight: 10,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{ color: "white", fontSize: 10, textAlign: "center" }}
-                >
-                  {item.title}
-                </Text>
-              </View>
+              <MovieCard
+                key={item.id?.toString() || `${title}-${Math.random()}`}
+                movie={item}
+                onPress={onMoviePress}
+                width={140}
+              />
             ) : null,
           )}
         </ScrollView>
@@ -214,15 +199,6 @@ const HomeScreen = () => {
             </Text>
           )}
         </View>
-
-        {/* DEBUG - remove after fixing */}
-        <Text style={{ color: "yellow", padding: 10 }}>
-          Trending: {trending.length} | Popular: {popular.length} | Top:{" "}
-          {topRated.length}
-        </Text>
-        <Text style={{ color: "orange", padding: 10, fontSize: 10 }}>
-          API: {require("../config/env").ENV.API_URL}
-        </Text>
 
         {renderMovieSection("🔥 Trending Today", trending)}
         {renderMovieSection("🎬 Popular Movies", popular)}
