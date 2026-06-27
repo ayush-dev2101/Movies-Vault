@@ -215,14 +215,7 @@ const HomeScreen = () => {
           )}
         </View>
 
-        {/* DEBUG - remove after fixing */}
-        <Text style={{ color: "yellow", padding: 10 }}>
-          Trending: {trending.length} | Popular: {popular.length} | Top:{" "}
-          {topRated.length}
-        </Text>
-        <Text style={{ color: "orange", padding: 10, fontSize: 10 }}>
-          API: {require("../config/env").ENV.API_URL}
-        </Text>
+
 
         {renderMovieSection("🔥 Trending Today", trending)}
         {renderMovieSection("🎬 Popular Movies", popular)}

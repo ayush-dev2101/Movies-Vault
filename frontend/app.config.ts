@@ -11,7 +11,7 @@ const CLERK_KEY =
   'pk_test_c2hhcnAtY293LTk2LmNsZXJrLmFjY291bnRzLmRldiQ';
 
 const API_URL =
-  env['EXPO_PUBLIC_API_URL'] || 'http://10.217.55.66:5001';
+  env['EXPO_PUBLIC_API_URL'] || 'https://movies-vault-production.up.railway.app';
 
 const TMDB_KEY =
   env['EXPO_PUBLIC_TMDB_API_KEY'] ||
