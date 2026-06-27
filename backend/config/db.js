@@ -24,7 +24,6 @@ const connectDB = async () => {
       process.exit(1);
     }
 
-<<<<<<< HEAD
     console.log(
       `[${new Date().toISOString()}] Attempting to connect to MongoDB...`,
     );
@@ -42,14 +41,6 @@ const connectDB = async () => {
         "Authentication failed. Verify the Atlas username, password, and database user permissions.",
       );
     }
-=======
-    console.log(`[${new Date().toISOString()}] Attempting to connect to MongoDB...`);
-    const conn = await mongoose.connect(mongoUri);
-    console.log(`[${new Date().toISOString()}] MongoDB Connected: ${conn.connection.host}`);
-  } catch (error) {
-    console.error(error);
-    // We exit so Railway can try to restart the container, but now we know why
->>>>>>> 64ef17cab03614318020c5ea702a16202ad308c7
     process.exit(1);
   }
 };
