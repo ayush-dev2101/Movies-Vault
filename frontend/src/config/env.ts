@@ -13,33 +13,31 @@ import Constants from 'expo-constants';
 
 const extra: Record<string, any> = Constants.expoConfig?.extra ?? {};
 
-const env = process.env as any;
-
 // ── CLERK ────────────────────────────────────────────
 const CLERK_PUBLISHABLE_KEY: string =
-  (env['EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY'] as string) ||
+  process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ||
   (extra.clerkPublishableKey as string) ||
   'pk_test_c2hhcnAtY293LTk2LmNsZXJrLmFjY291bnRzLmRldiQ';
 
 // ── API ──────────────────────────────────────────────
 const API_URL: string =
-  (env['EXPO_PUBLIC_API_URL'] as string) ||
+  process.env.EXPO_PUBLIC_API_URL ||
   (extra.apiUrl as string) ||
   'https://movies-vault-production.up.railway.app';
 
 // ── TMDB ─────────────────────────────────────────────
 const TMDB_API_KEY: string =
-  (env['EXPO_PUBLIC_TMDB_API_KEY'] as string) ||
+  process.env.EXPO_PUBLIC_TMDB_API_KEY ||
   (extra.tmdbApiKey as string) ||
   '2e9b43087d0f9736eab380d2151b3b8c';
 
 // ── GOOGLE ───────────────────────────────────────────
 const GOOGLE_CLIENT_ID: string =
-  (env['EXPO_PUBLIC_GOOGLE_CLIENT_ID'] as string) ||
+  process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ||
   '289796269059-271uqrpni6iovil59pmqe51qckpj9j7a.apps.googleusercontent.com';
 
 const GOOGLE_ANDROID_CLIENT_ID: string =
-  (env['EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID'] as string) ||
+  process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ||
   '289796269059-f96po61l248r9mtr6pksk3knqntav10i.apps.googleusercontent.com';
 
 // ─────────────────────────────────────────────────────

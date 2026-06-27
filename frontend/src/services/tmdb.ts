@@ -1,71 +1,36 @@
-import axios from 'axios';
-import { ENV } from '../config/env';
+import api from './api';
 
-const TMDB_API_KEY = ENV.TMDB_API_KEY;
-const BASE_URL = 'https://api.themoviedb.org/3';
-
-const tmdbApi = axios.create({
-  baseURL: BASE_URL,
-  timeout: 10000,
-});
-
-// Request Interceptor: Attach API Key securely
-tmdbApi.interceptors.request.use((config) => {
-  config.params = config.params || {};
-  config.params.api_key = TMDB_API_KEY;
-  console.log(`[TMDB Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
-
-// Response Interceptor: Log errors
-tmdbApi.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    console.error(`[TMDB Response Error] ${error.config?.url}:`, error.message);
-    if (error.response?.data) {
-      console.error('[TMDB Response Details]:', JSON.stringify(error.response.data));
-    }
-    return Promise.reject(error);
-  }
-);
-
-export const getTrendingMovies = async () => {
-  const response = await tmdbApi.get('/trending/movie/day');
-  return response.data.results;
+export const getTrendingMovies = async (): Promise<any[]> => {
+  const response = await api.get('/movies/tmdb/trending');
+  return response.data.results ?? response.data ?? [];
 };
 
-export const getPopularMovies = async (page = 1) => {
-  const response = await tmdbApi.get('/movie/popular', { params: { page } });
-  return response.data.results;
+export const getPopularMovies = async (page = 1): Promise<any[]> => {
+  const response = await api.get('/movies/tmdb/popular', { params: { page } });
+  return response.data.results ?? response.data ?? [];
 };
 
-export const getTopRatedMovies = async (page = 1) => {
-  const response = await tmdbApi.get('/movie/top_rated', { params: { page } });
-  return response.data.results;
+export const getTopRatedMovies = async (page = 1): Promise<any[]> => {
+  const response = await api.get('/movies/tmdb/top_rated', { params: { page } });
+  return response.data.results ?? response.data ?? [];
 };
 
-export const getUpcomingMovies = async (page = 1) => {
-  const response = await tmdbApi.get('/movie/upcoming', { params: { page } });
-  return response.data.results;
+export const getUpcomingMovies = async (page = 1): Promise<any[]> => {
+  const response = await api.get('/movies/tmdb/upcoming', { params: { page } });
+  return response.data.results ?? response.data ?? [];
 };
 
-export const searchMovies = async (query: string, page = 1) => {
-  const response = await tmdbApi.get('/search/movie', { params: { query, page } });
-  return response.data.results;
+export const searchMovies = async (query: string, page = 1): Promise<any[]> => {
+  const response = await api.get('/movies/tmdb/search', { params: { query, page } });
+  return response.data.results ?? response.data ?? [];
 };
 
-export const getMovieDetails = async (movieId: number) => {
-  const response = await tmdbApi.get(`/movie/${movieId}`, {
-    params: { append_to_response: 'credits,videos,similar' },
-  });
+export const getMovieDetails = async (movieId: number): Promise<any> => {
+  const response = await api.get(`/movies/tmdb/${movieId}`);
   return response.data;
 };
 
-export const getImageUrl = (path: string, size: 'w500' | 'original' = 'w500') => {
-  if (!path) return 'https://via.placeholder.com/500x750?text=No+Image';
+export const getImageUrl = (path: string | null | undefined, size: 'w200' | 'w500' | 'original' = 'w500'): string => {
+  if (!path) return `https://placehold.co/500x750/1a1a1a/ffffff?text=No+Image`;
   return `https://image.tmdb.org/t/p/${size}${path}`;
 };
