@@ -7,11 +7,29 @@ const resolveMongoUri = (env = process.env) => {
     env.DATABASE_URL,
     env.MONGODB_URL,
   ];
-  return (
-    candidates.find(
-      (value) => typeof value === "string" && value.trim().length > 0,
-    ) || null
+
+  const found = candidates.find(
+    (value) => typeof value === "string" && value.trim().length > 0,
   );
+  if (found) return found;
+
+  // If a full URI wasn't provided, allow building one from parts.
+  // This helps avoid authentication failures when passwords contain
+  // special characters (they must be URL-encoded) and supports
+  // deployment platforms (like Railway) that store secrets separately.
+  const { MONGO_USER, MONGO_PASS, MONGO_HOST, MONGO_DB, MONGO_OPTIONS } = env;
+  if (MONGO_USER && MONGO_PASS && MONGO_HOST) {
+    const user = encodeURIComponent(MONGO_USER);
+    const pass = encodeURIComponent(MONGO_PASS);
+    const db = MONGO_DB || "admin";
+    const options = MONGO_OPTIONS || "retryWrites=true&w=majority";
+
+    // If host already looks like an SRV host (mongodb+srv://...), don't double prepend
+    const host = MONGO_HOST.replace(/^mongodb(\+srv)?:\/\//, "");
+    return `mongodb+srv://${user}:${pass}@${host}/${db}?${options}`;
+  }
+
+  return null;
 };
 
 const connectDB = async () => {
